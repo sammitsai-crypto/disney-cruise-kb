@@ -116,7 +116,7 @@ textarea:focus{border-color:rgba(99,102,241,0.5)}
 
 <script>
 // ─── Data source ───────────────────────────────────────────────────────────
-const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT0fi2mN2oElWNTmVyowaZ7_R4HpCY-3WoMw1NsQOitQLeUMZ-l2hUKbZXFWnCMuzL_PgQBNAW_8fV3/pub?output=csv';
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRNrhyhY3IbegfYIgmd6QrQtxsHeUyJDiXKcJU2pvlPHhdm_TG3258nYhDyb4M__g/pub?gid=1087114810&single=true&output=csv';
 
 // ─── Category colour / icon maps ──────────────────────────────────────────
 const CC = {
@@ -459,14 +459,33 @@ document.addEventListener('click', function(e) {
 });
 
 // ─── Initialise: fetch CSV → build KB → start app ─────────────────────────
+async function fetchWithRetry(url, attempts) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const controller = new AbortController();
+      const tid = setTimeout(() => controller.abort(), 12000); // 12s timeout
+      const resp = await fetch(url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now(), {
+        cache: 'no-store',
+        signal: controller.signal
+      });
+      clearTimeout(tid);
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      return await resp.text();
+    } catch (e) {
+      lastErr = e;
+      if (i < attempts - 1) await new Promise(r => setTimeout(r, 1500));
+    }
+  }
+  throw lastErr;
+}
+
 async function init() {
   const loadingText = document.getElementById('loading-text');
   try {
     loadingText.textContent = '正在從 Google Sheets 載入最新知識庫...';
 
-    const resp = await fetch(SHEET_URL);
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const raw = await resp.text();
+    const raw = await fetchWithRetry(SHEET_URL, 3);
 
     loadingText.textContent = '解析資料中...';
     const rows = parseCSV(raw);
@@ -499,7 +518,7 @@ async function init() {
       <div class="error-box">
         ❌ 無法載入知識庫資料<br>
         <small style="color:#94a3b8;font-size:11px">${esc(err.message)}</small><br>
-        <small style="color:#64748b;font-size:11px">請確認 Google Sheets 已「發布到網路」</small><br>
+        <small style="color:#64748b;font-size:11px">請確認網路連線正常，或 Google Sheets 已「發布到網路」</small><br>
         <button class="retry-btn" onclick="init()">🔄 重新載入</button>
       </div>`;
   }
