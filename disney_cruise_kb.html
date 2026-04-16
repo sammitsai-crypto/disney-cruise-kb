@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SCM Disney Cruise 客服知識庫</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100vh;background:linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#0f172a 100%);color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Noto Sans TC",sans-serif}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:#475569;border-radius:3px}
+#app{max-width:1000px;margin:0 auto;padding:20px 20px 40px}
+.header{margin-bottom:0}
+.logo-row{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.logo{width:36px;height:36px;background:linear-gradient(135deg,#6366f1,#ec4899);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+h1{font-size:18px;font-weight:700;color:#f1f5f9}
+.subtitle{font-size:11px;color:#64748b;margin-top:2px}
+.tab-bar{display:flex;border-bottom:1px solid rgba(148,163,184,0.12);margin-top:14px}
+.tab-btn{padding:10px 20px;border:none;background:transparent;color:#94a3b8;cursor:pointer;font-size:14px;font-weight:500;border-bottom:2px solid transparent;transition:all 0.2s;font-family:inherit}
+.tab-btn.active{color:#818cf8;border-bottom-color:#818cf8}
+.pane{padding-top:18px}
+.input-card{background:rgba(30,41,59,0.7);border:1px solid rgba(148,163,184,0.1);border-radius:12px;padding:18px;margin-bottom:14px}
+.hint-text{font-size:13px;color:#94a3b8;margin-bottom:10px;line-height:1.5}
+textarea{width:100%;padding:12px 16px;background:rgba(15,23,42,0.6);border:1px solid rgba(148,163,184,0.2);border-radius:10px;color:#e2e8f0;font-size:14px;outline:none;font-family:inherit;min-height:110px;resize:vertical;line-height:1.6}
+textarea:focus{border-color:rgba(99,102,241,0.5)}
+.btn-row{display:flex;gap:8px;margin-top:10px}
+.primary-btn{padding:10px 24px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:opacity 0.2s}
+.primary-btn:disabled{background:#334155;opacity:0.5;cursor:not-allowed}
+.secondary-btn{padding:10px 16px;background:rgba(148,163,184,0.1);border:1px solid rgba(148,163,184,0.2);border-radius:10px;color:#94a3b8;font-size:14px;cursor:pointer;font-family:inherit}
+.no-results{background:rgba(30,41,59,0.7);border:1px solid rgba(148,163,184,0.1);border-radius:12px;padding:24px;text-align:center;font-size:14px;color:#94a3b8}
+.result-info{font-size:12px;color:#64748b;margin-bottom:8px}
+.result-card{background:rgba(30,41,59,0.7);border:1px solid rgba(148,163,184,0.1);border-radius:12px;padding:16px;margin-bottom:10px}
+.badge-best{display:inline-block;background:#6366f1;color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;margin-bottom:8px}
+.card-header{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.cat-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
+.sub-name{font-size:13px;font-weight:600;color:#e2e8f0}
+.matched-kws{font-size:10px;color:#475569;margin-left:auto}
+.card-section{margin-bottom:10px}
+.section-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.section-label{font-size:11px;font-weight:600}
+.section-body{border-radius:8px;padding:10px;font-size:13px;line-height:1.8}
+.copy-btn{padding:4px 10px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);border-radius:6px;color:#a5b4fc;font-size:11px;cursor:pointer;font-family:inherit;transition:all 0.2s;flex-shrink:0}
+.copy-btn.copied{background:#10b981;border-color:#10b981;color:#fff}
+.notes-box{margin-top:8px;font-size:11px;color:#f59e0b;background:rgba(245,158,11,0.08);border-radius:6px;padding:6px 10px}
+#search-box{width:100%;padding:12px 16px;background:rgba(15,23,42,0.6);border:1px solid rgba(148,163,184,0.2);border-radius:10px;color:#e2e8f0;font-size:14px;outline:none;font-family:inherit;margin-bottom:14px}
+#search-box:focus{border-color:rgba(99,102,241,0.5)}
+.cat-row{background:rgba(30,41,59,0.7);border:1px solid rgba(148,163,184,0.1);border-radius:10px;padding:12px;cursor:pointer;margin-bottom:6px;user-select:none}
+.cat-row:hover{background:rgba(30,41,59,0.9)}
+.cat-inner{display:flex;align-items:center;gap:8px}
+.cat-icon{font-size:20px}
+.cat-name{font-size:14px;font-weight:600;color:#e2e8f0}
+.cat-count{font-size:12px;font-weight:600}
+.cat-meta{font-size:12px;color:#475569;margin-left:auto}
+.sub-list{margin-left:16px;margin-top:4px}
+.sub-row{background:rgba(30,41,59,0.7);border:1px solid rgba(148,163,184,0.1);border-radius:8px;padding:10px;cursor:pointer;margin-bottom:4px}
+.sub-row:hover{background:rgba(30,41,59,0.9)}
+.sub-inner{display:flex;align-items:center;gap:6px}
+.sub-label{font-size:12px;color:#cbd5e1;flex:1}
+.sub-meta{font-size:11px;color:#475569}
+.sub-detail{margin-top:10px}
+.search-result-row{background:rgba(30,41,59,0.7);border:1px solid rgba(148,163,184,0.1);border-radius:10px;padding:12px;cursor:pointer;margin-bottom:6px}
+.search-result-row:hover{background:rgba(30,41,59,0.9)}
+.sr-inner{display:flex;align-items:center;gap:8px}
+.sr-meta{font-size:11px;color:#475569;margin-left:auto}
+.search-count{font-size:12px;color:#64748b;margin-bottom:8px}
+/* Loading overlay */
+#loading-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#0f172a 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;transition:opacity 0.4s}
+#loading-overlay.hidden{opacity:0;pointer-events:none}
+.spinner{width:44px;height:44px;border:3px solid rgba(99,102,241,0.2);border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{color:#94a3b8;font-size:14px;text-align:center;max-width:340px;line-height:1.6}
+.error-box{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:20px;max-width:380px;text-align:center;color:#fca5a5;font-size:13px;line-height:1.7}
+.retry-btn{margin-top:12px;padding:8px 24px;background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.4);border-radius:8px;color:#a5b4fc;font-size:13px;cursor:pointer;font-family:inherit}
+.retry-btn:hover{background:rgba(99,102,241,0.3)}
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">正在載入知識庫...</div>
+</div>
+
+<div id="app">
+  <div class="header">
+    <div class="logo-row">
+      <div class="logo">🧠</div>
+      <div>
+        <h1>SCM Disney Cruise 客服知識庫</h1>
+        <div class="subtitle" id="subtitle">載入中...</div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tab-classify" onclick="switchTab('classify')">🤖 訊息辨識</button>
+      <button class="tab-btn" id="tab-browse" onclick="switchTab('browse')">📖 瀏覽知識庫</button>
+    </div>
+  </div>
+
+  <div id="classify-pane" class="pane">
+    <div class="input-card">
+      <p class="hint-text">貼上客人或 CS 的訊息（中文或英文皆可），自動辨識問題類型並帶出 OP 作業 &amp; CS 回覆</p>
+      <textarea id="msg-input" placeholder="貼上訊息內容..." oninput="onInputChange()"></textarea>
+      <div class="btn-row">
+        <button class="primary-btn" id="match-btn" disabled onclick="doMatch()">⚡ 辨識並帶出回覆</button>
+        <button class="secondary-btn" id="clear-btn" style="display:none" onclick="clearAll()">清除</button>
+      </div>
+    </div>
+    <div id="results-area"></div>
+  </div>
+
+  <div id="browse-pane" class="pane" style="display:none">
+    <input type="text" id="search-box" placeholder="🔍 搜尋情境、關鍵字、回覆內容..." oninput="onSearch()">
+    <div id="browse-area"></div>
+  </div>
+</div>
+
+<script>
+// ─── Data source ───────────────────────────────────────────────────────────
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT0fi2mN2oElWNTmVyowaZ7_R4HpCY-3WoMw1NsQOitQLeUMZ-l2hUKbZXFWnCMuzL_PgQBNAW_8fV3/pub?output=csv';
+
+// ─── Category colour / icon maps ──────────────────────────────────────────
+const CC = {
+  "APP/登入問題":"#6366f1","APP/資料問題":"#818cf8","APP/線上報到":"#a5b4fc",
+  "催促/進度查詢":"#f59e0b","50%折抵":"#10b981","旅客資料修改":"#ec4899",
+  "房號/艙房":"#8b5cf6","退款+取消":"#ef4444","接駁/交通":"#f97316","加人/升等":"#3b82f6"
+};
+const CI = {
+  "APP/登入問題":"📱","APP/資料問題":"📋","APP/線上報到":"✈️",
+  "催促/進度查詢":"⏰","50%折抵":"💰","旅客資料修改":"📝",
+  "房號/艙房":"🚪","退款+取消":"💸","接駁/交通":"🚐","加人/升等":"👥"
+};
+
+// Fallback color for new categories not in CC map
+function hashColor(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = Math.imul(31, h) + str.charCodeAt(i) | 0;
+  const palette = ['#6366f1','#8b5cf6','#ec4899','#ef4444','#f97316','#f59e0b','#10b981','#3b82f6','#06b6d4','#84cc16'];
+  return palette[Math.abs(h) % palette.length];
+}
+
+// PAX signals for boost scoring
+const PAX_SIGNALS = [
+  "date of birth","dob","be corrected","be updated","be amended","corrected and updated",
+  "birthday","passport update","passport renew","name incorrect","name wrong","name correct",
+  "name change","name update","name amend","name typo","name fix","please change",
+  "please update","please correct","please fix","entered incorrectly","can we change",
+  "can you change","is it possible to change","出生日期","出生年","生日","護照",
+  "修改","更改","更正","修正","名字","姓名","first name","last name","surname",
+  "填錯","寫錯","typo"
+];
+
+// ─── Mutable app state ────────────────────────────────────────────────────
+let KB = { categories: [] };
+let allSubs = [];
+const subMap = {};
+let currentResults = [];
+let expandedCat = null;
+let expandedSub = null;
+
+// ─── CSV Parser ────────────────────────────────────────────────────────────
+// Handles quoted fields containing embedded commas and newlines (RFC 4180)
+function parseCSV(raw) {
+  // Normalise line endings to \n
+  const text = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const rows = [];
+  let row = [];
+  let field = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    const next = text[i + 1];
+
+    if (inQuotes) {
+      if (c === '"' && next === '"') { field += '"'; i++; }  // escaped quote
+      else if (c === '"')           { inQuotes = false; }    // closing quote
+      else                          { field += c; }          // regular char inside quotes
+    } else {
+      if      (c === '"') { inQuotes = true; }
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n') {
+        row.push(field);
+        if (row.some(f => f.trim())) rows.push(row);  // skip blank rows
+        row = []; field = '';
+      } else {
+        field += c;
+      }
+    }
+  }
+  // Final field / row (file may not end with \n)
+  row.push(field);
+  if (row.some(f => f.trim())) rows.push(row);
+  return rows;
+}
+
+// ─── Build KB from CSV rows ───────────────────────────────────────────────
+// Expected columns (row 0 = header, skipped):
+//   0: 分類名稱  1: 情境名稱  2: 案件數  3: 關鍵字（每行一個）
+//   4: OP 作業步驟  5: OP 告知 CS  6: CS 對客回覆  7: 備注
+function buildKBFromCSV(rows) {
+  const catMap = new Map();
+  const catOrder = [];
+
+  for (let i = 1; i < rows.length; i++) {  // skip header
+    const r = rows[i];
+    if (!r || r.length < 7) continue;
+
+    const catName = (r[0] || '').trim();
+    const subName = (r[1] || '').trim();
+    if (!catName || !subName) continue;
+
+    const cases    = parseInt(r[2]) || 0;
+    const keywords = (r[3] || '').split('\n').map(k => k.trim()).filter(Boolean);
+    const op_action = (r[4] || '').trim();
+    const op_to_cs  = (r[5] || '').trim();
+    const cs_reply  = (r[6] || '').trim();
+    const notes     = (r[7] || '').trim();
+
+    if (!catMap.has(catName)) {
+      // Generate a stable cat ID from the order index
+      const catId = 'cat_' + catOrder.length;
+      catMap.set(catName, { id: catId, name: catName, total_cases: 0, subcategories: [] });
+      catOrder.push(catName);
+    }
+    const cat = catMap.get(catName);
+    const subId = cat.id + '_sub_' + cat.subcategories.length;
+    cat.total_cases += cases;
+    cat.subcategories.push({ id: subId, name: subName, cases, keywords, op_action, op_to_cs, cs_reply, notes });
+  }
+
+  return { categories: catOrder.map(n => catMap.get(n)) };
+}
+
+// ─── Match engine ─────────────────────────────────────────────────────────
+function matchMsg(msg) {
+  if (!msg || !msg.trim()) return [];
+  const m = msg.toLowerCase();
+  const results = [];
+  const isPaxChange = PAX_SIGNALS.some(s => m.includes(s.toLowerCase()));
+
+  KB.categories.forEach(cat => {
+    cat.subcategories.forEach(sub => {
+      let score = 0;
+      const matched = [];
+
+      sub.keywords.forEach(kw => {
+        const kwL = kw.toLowerCase();
+        let ok = false;
+        if (kwL.includes('.*')) {
+          try { ok = new RegExp(kwL, 'i').test(m); } catch(e) { ok = m.includes(kwL); }
+        } else {
+          ok = m.includes(kwL);
+        }
+        if (ok) {
+          score += kw.length > 10 ? 3 : kw.length > 5 ? 2 : 1;
+          matched.push(kw);
+        }
+      });
+
+      // PAX boost — match by sub.name since IDs are auto-generated
+      if (isPaxChange && sub.name.includes('其他資料修改')) score += 15;
+      if (isPaxChange && sub.name.includes('修改國籍') && (m.includes('國籍') || m.includes('nationality'))) score += 20;
+      if (isPaxChange && sub.name.includes('催一般')) score = Math.max(0, score - 10);
+
+      if (score > 0) results.push(Object.assign({}, sub, { catName: cat.name, catId: cat.id, score, matched }));
+    });
+  });
+
+  results.sort((a, b) => b.score - a.score);
+  return results;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function catColor(name) { return CC[name] || hashColor(name); }
+function catIcon(name)  { return CI[name] || '📌'; }
+
+// ─── Render card ──────────────────────────────────────────────────────────
+function cardHTML(sub, ridx) {
+  const c    = catColor(sub.catName);
+  const icon = catIcon(sub.catName);
+  const ref  = ridx !== undefined ? 'data-ridx="' + ridx + '"' : 'data-subid="' + sub.id + '"';
+  const matchedStr  = (sub.matched && sub.matched.length > 0)
+    ? '<span class="matched-kws">命中: ' + esc(sub.matched.slice(0, 4).join(', ')) + '</span>' : '';
+  const bestBadge   = (ridx === 0) ? '<span class="badge-best">最佳匹配</span>' : '';
+  const notesHtml   = sub.notes ? '<div class="notes-box">⚠️ ' + esc(sub.notes) + '</div>' : '';
+  const opToCs = sub.op_to_cs ? `
+    <div class="card-section">
+      <div class="section-row">
+        <span class="section-label" style="color:#10b981">🟢 OP 告知給 CS</span>
+        <button class="copy-btn" ${ref} data-field="op_to_cs">📋 複製</button>
+      </div>
+      <div class="section-body" style="background:rgba(16,185,129,0.08);color:#6ee7b7">${esc(sub.op_to_cs).replace(/\n/g, '<br>')}</div>
+    </div>` : '';
+  return `
+    <div class="result-card" style="border-left:3px solid ${c}">
+      ${bestBadge}
+      <div class="card-header">
+        <span class="cat-badge" style="color:${c};background:${c}22;border:1px solid ${c}44">${icon} ${esc(sub.catName)}</span>
+        <span class="sub-name">${esc(sub.name)}</span>
+        ${matchedStr}
+      </div>
+      <div class="card-section">
+        <div class="section-row">
+          <span class="section-label" style="color:#a855f7">🔴 OP 下一步作業</span>
+          <button class="copy-btn" ${ref} data-field="op_action">📋 複製</button>
+        </div>
+        <div class="section-body" style="background:rgba(139,92,246,0.08);color:#d8b4fe">${esc(sub.op_action).replace(/\n/g, '<br>')}</div>
+      </div>
+      ${opToCs}
+      <div class="card-section">
+        <div class="section-row">
+          <span class="section-label" style="color:#3b82f6">🔵 CS 對客回覆</span>
+          <button class="copy-btn" ${ref} data-field="cs_reply">📋 複製</button>
+        </div>
+        <div class="section-body" style="background:rgba(59,130,246,0.08);color:#93c5fd">${esc(sub.cs_reply).replace(/\n/g, '<br>')}</div>
+      </div>
+      ${notesHtml}
+    </div>`;
+}
+
+// ─── Tab ──────────────────────────────────────────────────────────────────
+function switchTab(t) {
+  document.getElementById('classify-pane').style.display = t === 'classify' ? 'block' : 'none';
+  document.getElementById('browse-pane').style.display   = t === 'browse'   ? 'block' : 'none';
+  document.getElementById('tab-classify').className = 'tab-btn' + (t === 'classify' ? ' active' : '');
+  document.getElementById('tab-browse').className   = 'tab-btn' + (t === 'browse'   ? ' active' : '');
+  if (t === 'browse') renderBrowse();
+}
+
+// ─── Classify ─────────────────────────────────────────────────────────────
+function onInputChange() {
+  const v = document.getElementById('msg-input').value;
+  document.getElementById('match-btn').disabled = !v.trim();
+  if (!v.trim()) {
+    document.getElementById('results-area').innerHTML = '';
+    document.getElementById('clear-btn').style.display = 'none';
+  }
+}
+function clearAll() {
+  document.getElementById('msg-input').value = '';
+  document.getElementById('results-area').innerHTML = '';
+  document.getElementById('match-btn').disabled = true;
+  document.getElementById('clear-btn').style.display = 'none';
+  currentResults = [];
+}
+function doMatch() {
+  const msg = document.getElementById('msg-input').value;
+  currentResults = matchMsg(msg);
+  const area = document.getElementById('results-area');
+  document.getElementById('clear-btn').style.display = 'inline-block';
+  if (currentResults.length === 0) {
+    area.innerHTML = '<div class="no-results">⚠️ 未匹配到已知情境，可能需要新增至知識庫。</div>';
+    return;
+  }
+  const top = currentResults.slice(0, 3);
+  let html = currentResults.length > 1
+    ? '<div class="result-info">找到 ' + currentResults.length + ' 個匹配，顯示前 ' + top.length + ' 個</div>' : '';
+  top.forEach((r, i) => { html += cardHTML(r, i); });
+  area.innerHTML = html;
+}
+
+// ─── Browse ───────────────────────────────────────────────────────────────
+function renderBrowse() {
+  const q    = (document.getElementById('search-box').value || '').trim().toLowerCase();
+  const area = document.getElementById('browse-area');
+
+  if (q) {
+    const filtered = allSubs.filter(s =>
+      s.name.toLowerCase().includes(q) ||
+      s.op_action.toLowerCase().includes(q) ||
+      s.cs_reply.toLowerCase().includes(q) ||
+      s.catName.toLowerCase().includes(q) ||
+      s.keywords.some(k => k.toLowerCase().includes(q))
+    );
+    if (filtered.length === 0) {
+      area.innerHTML = '<div class="no-results">找不到相關內容</div>';
+      return;
+    }
+    let html = '<div class="search-count">搜尋結果：' + filtered.length + ' 個情境</div>';
+    filtered.forEach(s => {
+      const c = catColor(s.catName);
+      const isOpen = expandedSub === s.id;
+      html += `<div class="search-result-row" style="border-left:3px solid ${c}" onclick="toggleSearchSub('${s.id}')">
+        <div class="sr-inner">
+          <span class="cat-badge" style="color:${c};background:${c}22;border:1px solid ${c}44">${catIcon(s.catName)} ${esc(s.catName)}</span>
+          <span class="sub-label">${esc(s.name)}</span>
+          <span class="sr-meta">${s.cases}筆 ${isOpen ? '▼' : '▶'}</span>
+        </div>
+        ${isOpen ? '<div class="sub-detail" onclick="event.stopPropagation()">' + cardHTML(s) + '</div>' : ''}
+      </div>`;
+    });
+    area.innerHTML = html;
+  } else {
+    let html = '';
+    KB.categories.forEach(cat => {
+      const c = catColor(cat.name);
+      const isOpen = expandedCat === cat.id;
+      let subsHtml = '';
+      if (isOpen) {
+        cat.subcategories.forEach(sub => {
+          const subOpen = expandedSub === sub.id;
+          subsHtml += `<div class="sub-row" onclick="event.stopPropagation();toggleSub('${sub.id}')">
+            <div class="sub-inner">
+              <span class="sub-label">${esc(sub.name)}</span>
+              <span class="sub-meta">${sub.cases}筆 ${subOpen ? '▼' : '▶'}</span>
+            </div>
+            ${subOpen ? '<div class="sub-detail" onclick="event.stopPropagation()">' + cardHTML(Object.assign({}, sub, {catName: cat.name, catId: cat.id})) + '</div>' : ''}
+          </div>`;
+        });
+      }
+      html += `<div style="margin-bottom:6px">
+        <div class="cat-row" style="border-left:3px solid ${c}" onclick="toggleCat('${cat.id}')">
+          <div class="cat-inner">
+            <span class="cat-icon">${catIcon(cat.name)}</span>
+            <span class="cat-name">${esc(cat.name)}</span>
+            <span class="cat-count" style="color:${c}">${cat.total_cases}筆</span>
+            <span class="cat-meta">${cat.subcategories.length}個情境 ${isOpen ? '▼' : '▶'}</span>
+          </div>
+        </div>
+        ${isOpen ? '<div class="sub-list">' + subsHtml + '</div>' : ''}
+      </div>`;
+    });
+    area.innerHTML = html;
+  }
+}
+function toggleCat(id) { expandedCat = expandedCat === id ? null : id; expandedSub = null; renderBrowse(); }
+function toggleSub(id) { expandedSub = expandedSub === id ? null : id; renderBrowse(); }
+function toggleSearchSub(id) { expandedSub = expandedSub === id ? null : id; renderBrowse(); }
+function onSearch() { expandedCat = null; expandedSub = null; renderBrowse(); }
+
+// ─── Copy (event delegation) ──────────────────────────────────────────────
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.copy-btn');
+  if (!btn) return;
+  e.stopPropagation();
+  const field = btn.dataset.field;
+  let text = '';
+  if (btn.dataset.ridx !== undefined) {
+    const r = currentResults[parseInt(btn.dataset.ridx)];
+    if (r) text = r[field] || '';
+  } else if (btn.dataset.subid) {
+    const s = subMap[btn.dataset.subid];
+    if (s) text = s[field] || '';
+  }
+  if (!text) return;
+  navigator.clipboard.writeText(text).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+  btn.textContent = '✅ 已複製';
+  btn.classList.add('copied');
+  setTimeout(() => { btn.textContent = '📋 複製'; btn.classList.remove('copied'); }, 1500);
+});
+
+// ─── Initialise: fetch CSV → build KB → start app ─────────────────────────
+async function init() {
+  const loadingText = document.getElementById('loading-text');
+  try {
+    loadingText.textContent = '正在從 Google Sheets 載入最新知識庫...';
+
+    const resp = await fetch(SHEET_URL);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const raw = await resp.text();
+
+    loadingText.textContent = '解析資料中...';
+    const rows = parseCSV(raw);
+    KB = buildKBFromCSV(rows);
+
+    // Rebuild allSubs and subMap
+    allSubs.length = 0;
+    Object.keys(subMap).forEach(k => delete subMap[k]);
+    KB.categories.forEach(cat => {
+      cat.subcategories.forEach(sub => {
+        const item = Object.assign({}, sub, { catName: cat.name, catId: cat.id });
+        allSubs.push(item);
+        subMap[sub.id] = item;
+      });
+    });
+
+    // Update subtitle
+    document.getElementById('subtitle').textContent =
+      allSubs.length + ' 個情境 · 中英文辨識 · 一鍵複製回覆';
+
+    // Hide loading overlay
+    const overlay = document.getElementById('loading-overlay');
+    overlay.classList.add('hidden');
+    setTimeout(() => { overlay.style.display = 'none'; }, 420);
+
+    renderBrowse();
+
+  } catch (err) {
+    loadingText.innerHTML = `
+      <div class="error-box">
+        ❌ 無法載入知識庫資料<br>
+        <small style="color:#94a3b8;font-size:11px">${esc(err.message)}</small><br>
+        <small style="color:#64748b;font-size:11px">請確認 Google Sheets 已「發布到網路」</small><br>
+        <button class="retry-btn" onclick="init()">🔄 重新載入</button>
+      </div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
