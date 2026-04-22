@@ -17,6 +17,10 @@ h1{font-size:18px;font-weight:700;color:#f1f5f9}
 .tab-bar{display:flex;border-bottom:1px solid rgba(148,163,184,0.12);margin-top:14px}
 .tab-btn{padding:10px 20px;border:none;background:transparent;color:#94a3b8;cursor:pointer;font-size:14px;font-weight:500;border-bottom:2px solid transparent;transition:all 0.2s;font-family:inherit}
 .tab-btn.active{color:#818cf8;border-bottom-color:#818cf8}
+.lang-bar{display:flex;align-items:center;gap:6px;margin-top:10px;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid rgba(148,163,184,0.08)}
+.lang-label{font-size:11px;color:#475569;white-space:nowrap}
+.lang-btn{padding:4px 12px;border:1px solid rgba(148,163,184,0.2);border-radius:20px;background:transparent;color:#94a3b8;font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.lang-btn.active{background:rgba(99,102,241,0.2);border-color:#6366f1;color:#a5b4fc;font-weight:600}
 .pane{padding-top:18px}
 .input-card{background:rgba(30,41,59,0.7);border:1px solid rgba(148,163,184,0.1);border-radius:12px;padding:18px;margin-bottom:14px}
 .hint-text{font-size:13px;color:#94a3b8;margin-bottom:10px;line-height:1.5}
@@ -62,7 +66,6 @@ textarea:focus{border-color:rgba(99,102,241,0.5)}
 .sr-inner{display:flex;align-items:center;gap:8px}
 .sr-meta{font-size:11px;color:#475569;margin-left:auto}
 .search-count{font-size:12px;color:#64748b;margin-bottom:8px}
-/* Loading overlay */
 #loading-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#0f172a 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;transition:opacity 0.4s}
 #loading-overlay.hidden{opacity:0;pointer-events:none}
 .spinner{width:44px;height:44px;border:3px solid rgba(99,102,241,0.2);border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:16px}
@@ -94,11 +97,18 @@ textarea:focus{border-color:rgba(99,102,241,0.5)}
       <button class="tab-btn active" id="tab-classify" onclick="switchTab('classify')">🤖 訊息辨識</button>
       <button class="tab-btn" id="tab-browse" onclick="switchTab('browse')">📖 瀏覽知識庫</button>
     </div>
+    <div class="lang-bar">
+      <span class="lang-label">CS 回覆語言：</span>
+      <button class="lang-btn active" id="lang-zh" onclick="setLang('zh')">🇹🇼 中文</button>
+      <button class="lang-btn" id="lang-en" onclick="setLang('en')">🇬🇧 English</button>
+      <button class="lang-btn" id="lang-ja" onclick="setLang('ja')">🇯🇵 日本語</button>
+      <button class="lang-btn" id="lang-ko" onclick="setLang('ko')">🇰🇷 한국어</button>
+    </div>
   </div>
 
   <div id="classify-pane" class="pane">
     <div class="input-card">
-      <p class="hint-text">貼上客人或 CS 的訊息（中文或英文皆可），自動辨識問題類型並帶出 OP 作業 &amp; CS 回覆</p>
+      <p class="hint-text">貼上客人或 CS 的訊息（中文、英文、日文、韓文皆可），自動辨識問題類型並帶出 OP 作業 &amp; CS 回覆</p>
       <textarea id="msg-input" placeholder="貼上訊息內容..." oninput="onInputChange()"></textarea>
       <div class="btn-row">
         <button class="primary-btn" id="match-btn" disabled onclick="doMatch()">⚡ 辨識並帶出回覆</button>
@@ -118,6 +128,197 @@ textarea:focus{border-color:rgba(99,102,241,0.5)}
 // ─── Data source ───────────────────────────────────────────────────────────
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRNrhyhY3IbegfYIgmd6QrQtxsHeUyJDiXKcJU2pvlPHhdm_TG3258nYhDyb4M__g/pub?gid=1087114810&single=true&output=csv';
 
+// ─── Language state ────────────────────────────────────────────────────────
+let currentLang = 'zh';
+
+function setLang(lang) {
+  currentLang = lang;
+  ['zh','en','ja','ko'].forEach(l => {
+    document.getElementById('lang-' + l).classList.toggle('active', l === lang);
+  });
+  // Re-render any visible cards
+  if (document.getElementById('results-area').innerHTML) doMatch();
+  if (document.getElementById('browse-pane').style.display !== 'none') renderBrowse();
+}
+
+// ─── Embedded translations (fallback when sheet has no translation columns) ─
+const TRANS = {
+en: {
+"無法登入DCL APP":"Hello, the booking information requires some processing time to sync to the Disney Cruise Line app, estimated 1-3 business days. If you are still unable to log in by then, please let us know so we can check again. Thank you.",
+"APP/官網找不到設定":"Hello, the booking information requires some processing time to sync to the Disney Cruise Line app, estimated 1-3 business days. If you are still unable to log in by then, please let us know. Please also verify the confirmation number on your voucher is correct. Thank you.",
+"超過30天仍找不到設定":"Hello, we sincerely apologize for the long wait. We have urgently contacted Disney official to confirm your booking setup, and will notify you as soon as we have an update. We are very sorry for the inconvenience.",
+"登入顯示尚未付清款項":"Hello, this message is simply displayed because online check-in has not yet opened on the Disney Cruise Line end, and has no actual relation to any fees or payments. Please rest assured. Thank you for your understanding.",
+"APP上旅客資料顯示錯誤":"Hello, we have received your request to modify the passenger information and will assist with processing as soon as possible. Please note that data modifications must be submitted at least 30 days before departure to ensure timely updates. Thank you.",
+"APP顯示航空旅行稅（Air Travel Taxes）":"We have reviewed this booking in detail and would like to clarify the information shown in the Navigator App. Please be assured that no additional Air Travel Taxes have been charged by Disney Cruise Line. This item appears because a separate flight record (Taipei to Singapore) was added to the booking. 'Air Travel Taxes' is automatically displayed by the system based on flight data and does not represent any actual additional charge or affect the cruise fare. Please feel free to contact us anytime if you have further questions.",
+"APP顯示旅客人數不符":"Hello, we are currently verifying the passenger information in your booking and will process it as soon as possible. Please wait a moment. Thank you.",
+"無法進行線上Check-in":"Hello, the online check-in feature for Disney Cruise Line is not yet available. It will be accessible once it opens. Please wait. Thank you.",
+"APP內預訂/訂餐功能問題":"Hello, please inform us if you need shuttle service and we will book it for you. For restaurants, onboard activities, and special requests such as birthdays, please book directly through the Disney Cruise App. Thank you.",
+"線上報到顯示未付款":"Hello, this is a normal display because the online check-in feature for Disney Cruise Line has not yet opened. It is not a payment issue. Once opened, you will be able to proceed normally. Please rest assured.",
+"報到照片/護照上傳問題":"Hello, for issues related to uploading passport photos, please contact Disney Cruise Line customer service directly for assistance. Thank you.",
+"催一般處理進度":"Hello, your request is being processed. We will notify you as soon as there is an update. Please wait. Thank you.",
+"催憑證/確認信":"Hello, your voucher/confirmation email will be sent as soon as possible. Please wait. Thank you.",
+"催資料修改進度":"Hello, the data modification is being processed. As it requires confirmation with Disney official, it takes some processing time. Please wait. Thank you.",
+"催問50%退款進度":"Hello, the 50% credit refund is being processed. We will notify you as soon as there is an update. Please wait. Thank you.",
+"提供新單設定申請折抵":"Hello, we have received your booking information and will process the 50% credit as soon as possible. Thank you.",
+"詢問是否符合折抵資格":"Hello, as long as the name and date of birth of the newly booked passenger match those of the previous booking, they qualify for the 50% credit. Please provide the new booking number and we will verify and process it for you. Thank you.",
+"已上表/提交退款申請":"Hello, we have received your application and will process it as soon as possible. Thank you.",
+"退款金額有疑問":"Hello, we are verifying the detailed refund amount. Please note that port taxes and related fees are not eligible for the 50% credit, so the amount may differ slightly from your own calculation. We will notify you as soon as we confirm. Thank you.",
+"其他50%折抵問題":"Hello, we are looking into your 50% credit inquiry. We will notify you as soon as we confirm. Thank you.",
+"修改國籍":"Hello, we have updated your nationality information. Thank you.",
+"其他資料修改（姓名/出生日期/護照/Email/性別）":"Hello, we have received your data modification request and will contact Disney official as soon as possible to process it. Once the modification is complete, we will notify you to confirm. Thank you.",
+"詢問房號編碼":"Hello, your cabin number code is {cabin number code}. Thank you.",
+"要求連通房/相鄰房":"Hello, we will try our best to arrange adjacent cabin numbers for you, but cannot guarantee it. The final arrangement will be subject to Disney official's allocation. Thank you.",
+"指定房號位置偏好":"Hello, we apologize that cabin location cannot be specified. The final arrangement will be subject to Disney official's allocation. We apologize for the inconvenience.",
+"換房/換主題房":"Hello, we apologize that cabin themes cannot be specified or changed. We apologize for the inconvenience.",
+"其他房號問題":"Hello, we will verify the cabin-related issue and notify you as soon as possible. Thank you.",
+"一般取消/退款申請":"Hello, this booking is non-refundable and non-cancellable per the product terms. If you have special circumstances, please explain and we will do our best to check if a flexible resolution is possible. Thank you.",
+"催退款進度":"Hello, the refund is being processed. We will notify you as soon as there is an update. Please wait. Thank you.",
+"退款金額疑問/要明細":"Hello, we are verifying the detailed refund amount and will notify you as soon as we confirm. Thank you.",
+"部分退款申請":"Hello, we will verify whether it is possible to cancel one passenger individually and the related fees. We will notify you as soon as we confirm. Thank you.",
+"特殊原因取消（家庭/健康）":"Hello, we have received your explanation and are deeply sorry to hear about your situation. Please provide relevant supporting documents and we will do our best to seek a flexible resolution for you. Thank you.",
+"取消後重新訂購":"Hello, we have processed your cancellation. If you wish to rebook, please place a new order and provide the new order number. We will handle the subsequent process for you. Thank you.",
+"重複預訂/訂錯取消":"Hello, we have confirmed this as a duplicate booking and will process the cancellation as soon as possible. Thank you.",
+"詢問如何預訂接駁":"Hello, shuttle service is available from the following locations: Changi Airport, Marina Bay Cruise Centre, Harbourfront Terminal, and Penang Cruise Terminal in Malaysia. Please provide: 1. Pick-up/drop-off location 2. Shuttle date 3. One-way or round trip 4. Number of passengers, and we will book it for you. Please note bookings must be made at least 3 days before departure. Thank you.",
+"確認是否包含接駁服務":"Hello, we will verify whether your booking package includes shuttle service and notify you as soon as possible. Thank you.",
+"接駁時間查詢/更改":"Hello, shuttle pick-up starts from 10:30 AM. Detailed shuttle times will be notified by email 5-7 days before departure. If you need to make changes, please inform us at least 7 days before departure — changes after that deadline cannot be refunded. Thank you.",
+"兌換碼問題（過期/無法使用）":"Hello, we will verify the status of your redemption code and process it as soon as possible. Please wait. Thank you.",
+"其他接駁問題":"Hello, the shuttle fee is USD 23 per person per way. There is an additional fare difference for this booking. Please make the payment on the product page and note your original order number when placing the order. Thank you.\nSupplement link: https://www.kkday.com/zh-tw/product/579218",
+"新增旅客（詢問可行性/費用）":"Hello, please first provide the passport English name, gender, and nationality of the passenger you wish to add. We will confirm with Disney official whether it is possible and the related fees, and notify you as soon as we confirm. Thank you.",
+"升等艙房":"Hello, we apologize that cabin upgrades are currently not available. We apologize for the inconvenience.",
+"減少人數":"Hello, we will verify whether it is possible to reduce the number of passengers and the related fees. We will notify you as soon as we confirm. Thank you.",
+"攜帶酒精上船":"Hello, guests aged 21 and above may bring up to 2 bottles of unopened wine or sparkling wine (750ml or less) or 6 cans of beer (12oz or less) per voyage and per port of call, in carry-on luggage. A corkage fee of USD 29 per bottle applies if brought to a restaurant. Please note: alcohol in checked luggage will be confiscated without refund. Thank you.",
+"攜帶食物/飲料上船":"Hello, factory-sealed non-perishable snacks may be brought on board, but must be consumed before returning to the home port or remain unopened. Homemade food, opened food, food requiring refrigeration, and appliances such as rice cookers and coffee makers are prohibited. Baby food or dietary-restriction-related food may be packed in a cooler bag of 12 inches or less (carry-on luggage). Thank you.",
+"電器攜帶限制":"Hello, most appliances are prohibited on board, including: rice cookers, coffee makers, kettles, electric irons, extension cords/power strips, blenders, etc. Permitted items: hair dryers (max 220V/2000W, also provided in cabins), curling irons/straighteners, electric razors. Prohibited appliances found during security checks will be confiscated and may cause luggage delays until late at night. Please note. Thank you.",
+"船上吸煙政策":"Hello, smoking (including e-cigarettes) is only permitted in designated smoking areas on board. Smoking in cabins or on balconies is prohibited. If caught smoking in a cabin or on a balcony, a USD 250 cleaning fee will be charged (including replacement of air filters, carpets, and bedding). For detailed smoking area locations, please ask the crew after boarding. Thank you.",
+"船上消費方式":"Hello, all onboard expenses (dining, activities, shops, etc.) will be charged to your room account. No cash is needed on board — everything can be settled before disembarking on the last day. We recommend linking a credit card to your room account when you board. Thank you.",
+"特殊膳食/食物過敏申請":"Hello, Disney Cruise Line offers special meals including gluten-free, vegetarian, sugar-free, and dairy-free options. Please log in to Disney Cruise Line and go to 'My Reservations' → 'Special Requests' to submit your needs: general dietary requests at least 3 days before departure; Kosher or Halal meals at least 5 weeks before; Passover meals must be requested by phone at least 10 weeks before. Please also inform your server of any allergies or dietary restrictions when ordering each meal on board. Thank you.",
+"特殊場合安排（生日/蜜月/紀念日）":"Hello, if you have a birthday, honeymoon, anniversary, engagement, or other special occasion, please note it in your Disney Cruise Line reservation.",
+"帶嬰兒/幼兒同行":"Hello, information for traveling with infants/toddlers: 1. Strollers are allowed but must not be parked in corridors or public areas; collapsible/lightweight ones are recommended. 2. Cribs (Pack'n Play) can be requested for free through 'My Reservations → Special Requests,' subject to availability. 3. Basic supplies such as diapers, bottles, and baby shampoo are available at onboard shops. 4. Breast milk may be carried in carry-on luggage. Please let us know if you have other needs. Thank you.",
+"自行前往港口（捷運/計程車）":"Hello, the following transportation options are available to Singapore Marina Bay Cruise Centre:\n1. MRT: Take the North-South Line (Red Line) to the terminal station NS28 Marina South Pier, then follow the signs and walk approximately 5-10 minutes (about 500-600 meters).\n2. Taxi: Approximately USD 15-30 depending on your starting location.\nIf you need Disney official shuttle service (USD 23 per person per way), please let us know and we will help you book. Thank you.",
+"兩/多筆同行單想綁定一起":"Hello, the two bookings have been successfully linked. Please log in to the Disney Cruise Line app to confirm.",
+"連通房需求":"Hello, regarding your connecting room request, we have noted it on your behalf. However, the actual arrangement will depend on the ship's final configuration and cannot be guaranteed. We apologize for the inconvenience."
+},
+ja: {
+"無法登入DCL APP":"こんにちは、設定情報がディズニークルーズラインアプリに同期されるまで、約1〜3営業日かかります。それでもログインできない場合は、再度お知らせいただければ確認いたします。よろしくお願いいたします。",
+"APP/官網找不到設定":"こんにちは、設定情報がディズニークルーズラインアプリに同期されるまで、約1〜3営業日かかります。それでもログインできない場合は、再度お知らせください。また、バウチャーの確認番号が正しいかどうかもご確認ください。よろしくお願いいたします。",
+"超過30天仍找不到設定":"こんにちは、長らくお待たせして誠に申し訳ございません。ディズニー公式に緊急連絡してご予約の設定を確認しており、結果が出次第すぐにご連絡いたします。大変ご不便をおかけして申し訳ございません。",
+"登入顯示尚未付清款項":"こんにちは、このメッセージはディズニークルーズライン側でオンラインチェックインがまだ開放されていないために表示されているものであり、料金や支払いとは実際に関係ありません。どうぞご安心ください。ご理解いただきありがとうございます。",
+"APP上旅客資料顯示錯誤":"こんにちは、旅客情報の修正依頼を受け取りました。できる限り早急に処理いたします。なお、データの修正は出発の30日前までにご提出いただく必要があります。よろしくお願いいたします。",
+"APP顯示航空旅行稅（Air Travel Taxes）":"このご予約を詳しく確認いたしました。Navigator Appに表示されている情報についてご説明します。ディズニークルーズラインからは航空旅行税（Air Travel Taxes）は一切請求されておりません。アプリにこの項目が表示されているのは、予約に独立したフライト情報（台北〜シンガポール）が追加されているためです。「Air Travel Taxes」はシステムがフライトデータに基づいて自動表示する項目であり、実際の追加料金を意味するものでも、クルーズ料金に影響するものでもありません。その他ご不明な点がございましたら、お気軽にお問い合わせください。",
+"APP顯示旅客人數不符":"こんにちは、ご予約の旅客情報を確認中です。できる限り早急に処理してご連絡いたします。しばらくお待ちください。よろしくお願いいたします。",
+"無法進行線上Check-in":"こんにちは、現在ディズニークルーズラインのオンラインチェックイン機能はまだ開放されていません。開放後は通常通り操作できます。しばらくお待ちください。よろしくお願いいたします。",
+"APP內預訂/訂餐功能問題":"こんにちは、シャトルサービスが必要な場合はお知らせください。ご予約いたします。レストラン、船内アクティビティ、誕生日などの特別なご要望は、Disney Cruise Appから直接ご予約ください。よろしくお願いいたします。",
+"線上報到顯示未付款":"こんにちは、これはディズニークルーズラインのオンラインチェックイン機能がまだ開放されていないための正常な表示であり、支払いの問題ではありません。開放後は正常に操作できます。どうぞご安心ください。",
+"報到照片/護照上傳問題":"こんにちは、パスポート写真のアップロードに関するご質問は、ディズニークルーズラインのカスタマーサービスに直接お問い合わせください。よろしくお願いいたします。",
+"催一般處理進度":"こんにちは、お客様のご依頼は処理中です。進捗があり次第すぐにご連絡いたします。しばらくお待ちください。よろしくお願いいたします。",
+"催憑證/確認信":"こんにちは、バウチャー/確認書をできる限り早急にお送りします。しばらくお待ちください。よろしくお願いいたします。",
+"催資料修改進度":"こんにちは、データの修正は処理中です。ディズニー公式との確認が必要なため、お時間をいただいております。しばらくお待ちください。よろしくお願いいたします。",
+"催問50%退款進度":"こんにちは、50%クレジット返金は処理中です。進捗があり次第すぐにご連絡いたします。しばらくお待ちください。よろしくお願いいたします。",
+"提供新單設定申請折抵":"こんにちは、ご予約情報を受け取りました。できる限り早急に50%クレジットを処理いたします。よろしくお願いいたします。",
+"詢問是否符合折抵資格":"こんにちは、新しいご予約の旅客の氏名と生年月日が以前のご予約と一致していれば、50%クレジットの対象となります。新しい予約番号をお知らせいただければ、確認・処理いたします。よろしくお願いいたします。",
+"已上表/提交退款申請":"こんにちは、お申し込みを受け取りました。できる限り早急に処理いたします。よろしくお願いいたします。",
+"退款金額有疑問":"こんにちは、返金額の詳細を確認中です。なお、港湾税などの関連費用は50%クレジットの対象外であるため、お客様が計算された金額と若干異なる場合があります。確認次第すぐにご連絡いたします。よろしくお願いいたします。",
+"其他50%折抵問題":"こんにちは、50%クレジットに関するご質問を確認しております。確認次第すぐにご連絡いたします。よろしくお願いいたします。",
+"修改國籍":"こんにちは、国籍情報を修正いたしました。よろしくお願いいたします。",
+"其他資料修改（姓名/出生日期/護照/Email/性別）":"こんにちは、データ修正のご依頼を受け取りました。できる限り早急にディズニー公式に連絡して処理いたします。修正完了後はご確認のためご連絡いたします。よろしくお願いいたします。",
+"詢問房號編碼":"こんにちは、お客様の客室番号コードは {客室番号コード} です。よろしくお願いいたします。",
+"要求連通房/相鄰房":"こんにちは、できる限り隣接した客室番号を手配するよう努めますが、保証することはできません。最終的な手配はディズニー公式の配置に従います。よろしくお願いいたします。",
+"指定房號位置偏好":"こんにちは、誠に申し訳ございませんが、客室の場所を指定することはできません。最終的な手配はディズニー公式の配置に従います。ご不便をおかけして申し訳ございません。",
+"換房/換主題房":"こんにちは、誠に申し訳ございませんが、客室のテーマを指定または変更することはできません。ご不便をおかけして申し訳ございません。",
+"其他房號問題":"こんにちは、客室に関する問題を確認し、できる限り早急にご連絡いたします。よろしくお願いいたします。",
+"一般取消/退款申請":"こんにちは、このご予約は商品規定により取消・返金不可となっております。特別な事情がある場合は理由をご説明ください。柔軟な対応が可能かどうか確認するよう最善を尽くします。よろしくお願いいたします。",
+"催退款進度":"こんにちは、返金は処理中です。進捗があり次第すぐにご連絡いたします。しばらくお待ちください。よろしくお願いいたします。",
+"退款金額疑問/要明細":"こんにちは、返金額の詳細を確認中です。確認次第すぐにご連絡いたします。よろしくお願いいたします。",
+"部分退款申請":"こんにちは、1名の旅客のみ個別取消が可能か、および関連費用について確認いたします。確認次第すぐにご連絡いたします。よろしくお願いいたします。",
+"特殊原因取消（家庭/健康）":"こんにちは、ご状況をお聞きし、大変残念に思います。関連する証明書類をご提出いただければ、柔軟な対応を最大限模索いたします。よろしくお願いいたします。",
+"取消後重新訂購":"こんにちは、取消処理を完了いたしました。再予約をご希望の場合は、新しい注文を行い、新しい注文番号をお知らせください。後続の処理を行います。よろしくお願いいたします。",
+"重複預訂/訂錯取消":"こんにちは、重複予約であることを確認いたしました。できる限り早急にキャンセル処理を行います。よろしくお願いいたします。",
+"詢問如何預訂接駁":"こんにちは、以下の場所からシャトルサービスをご利用いただけます：チャンギ空港、マリーナベイクルーズセンター、ハーバーフロントターミナル、マレーシア・ペナンクルーズターミナル。以下をご提供ください：1.乗車/降車場所 2.シャトル日程 3.片道または往復 4.人数。ご予約いたします。出発の3日前までにご予約ください。よろしくお願いいたします。",
+"確認是否包含接駁服務":"こんにちは、ご予約プランにシャトルサービスが含まれているか確認し、できる限り早急にご連絡いたします。よろしくお願いいたします。",
+"接駁時間查詢/更改":"こんにちは、シャトルサービスは午前10:30から開始されます。詳細なシャトル時間は出発の5〜7日前にメールでご連絡いたします。変更が必要な場合は出発の7日前までにお知らせください。期限を過ぎた場合は返金できませんのでご注意ください。よろしくお願いいたします。",
+"兌換碼問題（過期/無法使用）":"こんにちは、ご利用のリデンプションコードの状況を確認し、できる限り早急に処理いたします。しばらくお待ちください。よろしくお願いいたします。",
+"其他接駁問題":"こんにちは、シャトル費用は片道お一人様USD 23です。このご予約には追加差額が必要です。商品ページでお支払いいただき、注文時に元の注文番号をご記入ください。よろしくお願いいたします。\n補充リンク：https://www.kkday.com/zh-tw/product/579218",
+"新增旅客（詢問可行性/費用）":"こんにちは、まず追加したい旅客のパスポート英語名、性別、国籍をご提供ください。ディズニー公式に追加可否と関連費用を確認し、確認次第すぐにご連絡いたします。よろしくお願いいたします。",
+"升等艙房":"こんにちは、誠に申し訳ございませんが、現在客室のアップグレードは承っておりません。ご不便をおかけして申し訳ございません。",
+"減少人數":"こんにちは、旅客数の削減が可能か、および関連費用について確認いたします。確認次第すぐにご連絡いたします。よろしくお願いいたします。",
+"攜帶酒精上船":"こんにちは、21歳以上のお客様は、1航程および各寄港地につき、未開封のワインまたはスパークリングワイン（750ml以下）を最大2本、またはビール（12oz以下）を最大6缶、手荷物として持ち込むことができます。レストランでお飲みになる場合は、1本あたりUSD 29のコルク代が必要です。なお、預け入れ荷物内のアルコールは没収され、返金されませんのでご注意ください。よろしくお願いいたします。",
+"攜帶食物/飲料上船":"こんにちは、工場密封された日持ちのするスナックは持ち込み可能ですが、母港に戻る前に食べきるか未開封のままにしておく必要があります。手作り食品、開封済み食品、要冷蔵食品、炊飯器やコーヒーメーカーなどの電化製品は禁止されています。ベビーフードや食事制限に関連する食品は、12インチ以下のクーラーバッグ（機内持ち込み荷物）に入れることができます。よろしくお願いいたします。",
+"電器攜帶限制":"こんにちは、ほとんどの電化製品は船内への持ち込みが禁止されています。禁止品：炊飯器、コーヒーメーカー、電気ケトル、電気アイロン、延長コード/電源タップ、ミキサーなど。持込可能品：ヘアドライヤー（最大220V/2000W、客室内にも備え付け）、カールアイロン/ヘアアイロン、電気シェーバー。禁止電化製品がセキュリティチェックで発見された場合は没収され、荷物の遅延が深夜まで続く可能性がありますのでご注意ください。よろしくお願いいたします。",
+"船上吸煙政策":"こんにちは、船内での喫煙（電子タバコを含む）は指定の喫煙エリアのみで許可されています。客室やバルコニーでの喫煙は禁止されています。客室やバルコニーで喫煙が発見された場合、USD 250のクリーニング料金が請求されます（エアフィルター、カーペット、寝具の交換費用を含む）。詳細な喫煙エリアの場所は乗船後にスタッフにお尋ねください。よろしくお願いいたします。",
+"船上消費方式":"こんにちは、船内でのすべての消費（お食事、アクティビティ、ショップなど）はお部屋のアカウントに計上されます。船内では現金は不要で、最終日の下船前に一括精算できます。乗船時にお部屋のアカウントにクレジットカードを登録されることをお勧めします。よろしくお願いいたします。",
+"特殊膳食/食物過敏申請":"こんにちは、ディズニークルーズラインではグルテンフリー、ベジタリアン、砂糖不使用、乳製品不使用などの特別食を提供しています。ディズニークルーズラインにログインして「マイ予約」→「特別リクエスト」からご要望をご提出ください：一般的な食事制限は出発の少なくとも3日前；コーシャまたはハラール食は少なくとも5週間前；過越節食は少なくとも10週間前に電話で申請してください。乗船後も毎回注文時にアレルギーや食事制限をサーバーにお伝えください。よろしくお願いいたします。",
+"特殊場合安排（生日/蜜月/紀念日）":"こんにちは、誕生日、新婚旅行、記念日、婚約などの特別な機会がある場合は、ディズニークルーズラインの予約に備考を記入してください。",
+"帶嬰兒/幼兒同行":"こんにちは、乳幼児連れの旅行に関する情報：1. ベビーカーは持ち込み可能ですが、廊下や公共エリアへの駐車は禁止です。折りたたみ式の軽量タイプをお勧めします。2. ベビーベッド（Pack'n Play）は「マイ予約→特別リクエスト」から無料申請できます（在庫次第）。3. おむつ、哺乳瓶、ベビーシャンプーなどの基本用品は船内ショップで購入できます。4. 母乳は機内持ち込み荷物として運べます。その他ご要望がある場合はお知らせください。よろしくお願いいたします。",
+"自行前往港口（捷運/計程車）":"こんにちは、シンガポール・マリーナベイクルーズセンターへのアクセス方法：\n1. MRT：南北線（レッドライン）の終点NS28マリーナサウスピア駅まで乗車し、案内に従って徒歩約5〜10分（約500〜600メートル）で到着です。\n2. タクシー：出発地によりますが、USD 15〜30程度です。\nディズニー公式シャトルサービス（片道USD 23/人）をご希望の場合は、お知らせいただければご予約をお手伝いします。よろしくお願いいたします。",
+"兩/多筆同行單想綁定一起":"こんにちは、2つの予約のリンクが完了しました。ディズニークルーズラインアプリにログインしてご確認ください。",
+"連通房需求":"こんにちは、コネクティングルームのご要望について、代わりに備考として記入いたしました。ただし、実際の手配は船の最終設定によりますので、保証することはできません。ご不便をおかけして誠に申し訳ございません。"
+},
+ko: {
+"無法登入DCL APP":"안녕하세요, 설정 정보가 디즈니 크루즈 라인 앱에 동기화되기까지 약 1~3 영업일이 소요됩니다. 그때까지도 로그인이 되지 않으시면 다시 알려주시면 확인해 드리겠습니다. 감사합니다.",
+"APP/官網找不到設定":"안녕하세요, 설정 정보가 디즈니 크루즈 라인 앱에 동기화되기까지 약 1~3 영업일이 소요됩니다. 그때까지도 로그인이 되지 않으시면 다시 알려주시면 확인해 드리겠습니다. 또한 바우처의 확인 번호가 올바른지도 확인해 주세요. 감사합니다.",
+"超過30天仍找不到設定":"안녕하세요, 오래 기다리게 해드려서 진심으로 죄송합니다. 디즈니 공식 측에 긴급 연락하여 예약 설정을 확인 중이며, 결과가 나오는 즉시 알려드리겠습니다. 불편을 드려 죄송합니다.",
+"登入顯示尚未付清款項":"안녕하세요, 이 메시지는 디즈니 크루즈 라인 측에서 아직 온라인 체크인이 열리지 않아 표시되는 것으로, 요금이나 결제와는 전혀 관계가 없습니다. 안심하시기 바랍니다. 이해해 주셔서 감사합니다.",
+"APP上旅客資料顯示錯誤":"안녕하세요, 탑승객 정보 수정 요청을 접수했습니다. 최대한 빨리 처리해 드리겠습니다. 데이터 수정은 출발 30일 전까지 제출해야 함을 참고해 주세요. 감사합니다.",
+"APP顯示航空旅行稅（Air Travel Taxes）":"이 예약을 자세히 검토하였으며, Navigator App에 표시된 정보에 대해 설명드리겠습니다. 디즈니 크루즈 라인에서는 항공 여행세(Air Travel Taxes)를 추가로 청구하지 않으니 안심하세요. 앱에 이 항목이 표시되는 것은 예약에 별도의 항공편 정보(타이베이~싱가포르)가 추가되었기 때문입니다. 이 항목은 실제 추가 요금을 의미하지 않으며 크루즈 요금에도 영향을 미치지 않습니다. 추가 문의 사항은 언제든지 연락해 주세요.",
+"APP顯示旅客人數不符":"안녕하세요, 현재 예약의 탑승객 정보를 확인 중입니다. 최대한 빨리 처리하여 알려드리겠습니다. 잠시 기다려 주세요. 감사합니다.",
+"無法進行線上Check-in":"안녕하세요, 현재 디즈니 크루즈 라인의 온라인 체크인 기능이 아직 열리지 않았습니다. 열리면 정상적으로 이용하실 수 있습니다. 잠시 기다려 주세요. 감사합니다.",
+"APP內預訂/訂餐功能問題":"안녕하세요, 셔틀 서비스가 필요하시면 알려주시면 예약해 드리겠습니다. 레스토랑, 선상 활동, 생일 등 특별 요청은 Disney Cruise App을 통해 직접 예약해 주세요. 감사합니다.",
+"線上報到顯示未付款":"안녕하세요, 이것은 디즈니 크루즈 라인의 온라인 체크인 기능이 아직 열리지 않아 표시되는 정상적인 화면이며, 결제 문제가 아닙니다. 열리면 정상적으로 진행하실 수 있습니다. 안심하세요.",
+"報到照片/護照上傳問題":"안녕하세요, 여권 사진 업로드 관련 문제는 디즈니 크루즈 라인 고객 서비스에 직접 문의해 주세요. 감사합니다.",
+"催一般處理進度":"안녕하세요, 요청 사항이 처리 중입니다. 진행 상황이 있으면 바로 알려드리겠습니다. 잠시 기다려 주세요. 감사합니다.",
+"催憑證/確認信":"안녕하세요, 바우처/확인서를 최대한 빨리 보내드리겠습니다. 잠시 기다려 주세요. 감사합니다.",
+"催資料修改進度":"안녕하세요, 데이터 수정이 처리 중입니다. 디즈니 공식 측과 확인이 필요하여 시간이 다소 걸립니다. 잠시 기다려 주세요. 감사합니다.",
+"催問50%退款進度":"안녕하세요, 50% 크레딧 환불이 처리 중입니다. 진행 상황이 있으면 바로 알려드리겠습니다. 잠시 기다려 주세요. 감사합니다.",
+"提供新單設定申請折抵":"안녕하세요, 예약 정보를 접수했습니다. 최대한 빨리 50% 크레딧을 처리해 드리겠습니다. 감사합니다.",
+"詢問是否符合折抵資格":"안녕하세요, 새로 예약한 탑승객의 이름과 생년월일이 이전 예약과 일치하면 50% 크레딧 자격이 됩니다. 새 예약 번호를 알려주시면 확인 후 처리해 드리겠습니다. 감사합니다.",
+"已上表/提交退款申請":"안녕하세요, 신청서를 접수했습니다. 최대한 빨리 처리해 드리겠습니다. 감사합니다.",
+"退款金額有疑問":"안녕하세요, 환불 금액 세부 사항을 확인 중입니다. 항구세 등 관련 수수료는 50% 크레딧 적용 대상이 아니므로 직접 계산하신 금액과 약간 다를 수 있습니다. 확인되는 즉시 알려드리겠습니다. 감사합니다.",
+"其他50%折抵問題":"안녕하세요, 50% 크레딧 관련 문의 사항을 확인 중입니다. 확인되는 즉시 알려드리겠습니다. 감사합니다.",
+"修改國籍":"안녕하세요, 국적 정보를 수정했습니다. 감사합니다.",
+"其他資料修改（姓名/出生日期/護照/Email/性別）":"안녕하세요, 데이터 수정 요청을 접수했습니다. 최대한 빨리 디즈니 공식 측에 연락하여 처리하겠습니다. 수정이 완료되면 확인을 위해 연락드리겠습니다. 감사합니다.",
+"詢問房號編碼":"안녕하세요, 고객님의 객실 번호 코드는 {객실 번호 코드}입니다. 감사합니다.",
+"要求連通房/相鄰房":"안녕하세요, 최대한 인접한 객실 번호를 배정해 드리도록 노력하겠지만 보장할 수는 없습니다. 최종 배정은 디즈니 공식 측의 결정에 따릅니다. 감사합니다.",
+"指定房號位置偏好":"안녕하세요, 죄송하지만 객실 위치는 지정하실 수 없습니다. 최종 배정은 디즈니 공식 측의 결정에 따릅니다. 불편을 드려 죄송합니다.",
+"換房/換主題房":"안녕하세요, 죄송하지만 객실 테마는 지정하거나 변경하실 수 없습니다. 불편을 드려 죄송합니다.",
+"其他房號問題":"안녕하세요, 객실 관련 문제를 확인 후 최대한 빨리 알려드리겠습니다. 감사합니다.",
+"一般取消/退款申請":"안녕하세요, 이 예약은 상품 규정에 따라 취소 및 환불이 불가합니다. 특별한 사정이 있으시면 이유를 설명해 주시면 유연하게 처리할 수 있는지 최대한 확인해 드리겠습니다. 감사합니다.",
+"催退款進度":"안녕하세요, 환불이 처리 중입니다. 진행 상황이 있으면 바로 알려드리겠습니다. 잠시 기다려 주세요. 감사합니다.",
+"退款金額疑問/要明細":"안녕하세요, 환불 금액 세부 사항을 확인 중입니다. 확인되는 즉시 알려드리겠습니다. 감사합니다.",
+"部分退款申請":"안녕하세요, 탑승객 중 한 명만 개별 취소가 가능한지와 관련 수수료를 확인해 드리겠습니다. 확인되는 즉시 알려드리겠습니다. 감사합니다.",
+"特殊原因取消（家庭/健康）":"안녕하세요, 상황을 설명해 주셔서 감사합니다. 정말 안타깝게 생각합니다. 관련 증빙 서류를 제출해 주시면 유연한 해결 방법을 최대한 모색해 드리겠습니다. 감사합니다.",
+"取消後重新訂購":"안녕하세요, 취소 처리를 완료했습니다. 재예약을 원하시면 새로 주문하신 후 새 주문 번호를 알려주세요. 이후 절차를 처리해 드리겠습니다. 감사합니다.",
+"重複預訂/訂錯取消":"안녕하세요, 중복 예약임을 확인했습니다. 최대한 빨리 취소 처리해 드리겠습니다. 감사합니다.",
+"詢問如何預訂接駁":"안녕하세요, 다음 장소에서 셔틀 서비스를 이용하실 수 있습니다: 창이 공항, 마리나 베이 크루즈 센터, 하버프론트 터미널, 말레이시아 페낭 크루즈 터미널. 다음 정보를 제공해 주세요: 1.승하차 장소 2.셔틀 날짜 3.편도 또는 왕복 4.인원수. 예약해 드리겠습니다. 출발 3일 전까지 예약해야 함을 참고해 주세요. 감사합니다.",
+"確認是否包含接駁服務":"안녕하세요, 예약 패키지에 셔틀 서비스가 포함되어 있는지 확인 후 최대한 빨리 알려드리겠습니다. 감사합니다.",
+"接駁時間查詢/更改":"안녕하세요, 셔틀 서비스는 오전 10:30부터 탑승이 시작됩니다. 자세한 셔틀 시간은 출발 5~7일 전에 이메일로 안내드립니다. 변경이 필요한 경우 출발 7일 전까지 알려주세요. 기한 이후에는 환불이 불가합니다. 감사합니다.",
+"兌換碼問題（過期/無法使用）":"안녕하세요, 교환 코드 상태를 확인 후 최대한 빨리 처리해 드리겠습니다. 잠시 기다려 주세요. 감사합니다.",
+"其他接駁問題":"안녕하세요, 셔틀 요금은 편도 1인당 USD 23입니다. 이 예약에는 추가 차액이 필요합니다. 상품 페이지에서 결제해 주시고, 주문 시 원래 주문 번호를 기재해 주세요. 감사합니다.\n보충 링크: https://www.kkday.com/zh-tw/product/579218",
+"新增旅客（詢問可行性/費用）":"안녕하세요, 먼저 추가하실 탑승객의 영문 이름, 성별, 국적을 알려주세요. 디즈니 공식 측에 탑승객 추가 가능 여부와 관련 수수료를 확인 후 알려드리겠습니다. 감사합니다.",
+"升等艙房":"안녕하세요, 죄송하지만 현재 객실 업그레이드는 불가합니다. 불편을 드려 죄송합니다.",
+"減少人數":"안녕하세요, 탑승객 수 감소가 가능한지와 관련 수수료를 확인해 드리겠습니다. 확인되는 즉시 알려드리겠습니다. 감사합니다.",
+"攜帶酒精上船":"안녕하세요, 21세 이상 탑승객은 각 항해 및 기항지당 미개봉 와인이나 스파클링 와인(750ml 이하) 최대 2병 또는 맥주(12oz 이하) 최대 6캔을 기내 수하물로 반입할 수 있습니다. 레스토랑에서 드실 경우 병당 USD 29의 코르키지 요금이 부과됩니다. 위탁 수하물의 주류는 압수되며 환불되지 않으니 유의해 주세요. 감사합니다.",
+"攜帶食物/飲料上船":"안녕하세요, 공장 밀봉된 비냉장 스낵은 반입 가능하며, 모항에 돌아오기 전에 다 드시거나 미개봉 상태를 유지해야 합니다. 수제 음식, 개봉된 음식, 냉장이 필요한 음식, 전기밥솥이나 커피메이커 등 전자제품은 금지됩니다. 이유식이나 식이 제한 관련 음식은 12인치 이하의 쿨러백(기내 반입 수하물)에 넣을 수 있습니다. 감사합니다.",
+"電器攜帶限制":"안녕하세요, 대부분의 전자제품은 선내 반입이 금지되어 있습니다. 금지 품목: 전기밥솥, 커피메이커, 전기 주전자, 전기 다리미, 연장 코드/멀티탭, 믹서기 등. 반입 가능 품목: 헤어드라이어(최대 220V/2000W, 객실에도 비치), 고데기/헤어 스트레이트너, 전동 면도기. 금지된 전자제품이 보안 검색에서 발견될 경우 압수되어 수하물 지연이 심야까지 이어질 수 있으니 주의하세요. 감사합니다.",
+"船上吸煙政策":"안녕하세요, 선내 흡연(전자담배 포함)은 지정된 흡연 구역에서만 허용됩니다. 객실이나 발코니에서의 흡연은 금지됩니다. 객실이나 발코니에서 흡연이 적발될 경우 USD 250의 청소비가 부과됩니다(에어 필터, 카펫, 침구 교체 비용 포함). 자세한 흡연 구역 위치는 승선 후 직원에게 문의하세요. 감사합니다.",
+"船上消費方式":"안녕하세요, 선내의 모든 소비(식음료, 활동, 쇼핑 등)는 객실 계정에 청구됩니다. 선내에서 현금은 필요 없으며, 마지막 날 하선 전에 일괄 정산하면 됩니다. 승선 시 객실 계정에 신용카드를 등록하시는 것을 권장합니다. 감사합니다.",
+"特殊膳食/食物過敏申請":"안녕하세요, 디즈니 크루즈 라인은 글루텐 프리, 채식, 무설탕, 유제품 무함유 등 특별 식단을 제공합니다. 디즈니 크루즈 라인에 로그인하여 '내 예약' → '특별 요청'에서 요구 사항을 제출해 주세요: 일반 식이 요구 사항은 출발 최소 3일 전; 코셔 또는 할랄 식단은 최소 5주 전; 유월절 식단은 최소 10주 전에 전화로 신청하세요. 승선 후에도 매 식사 시 서버에게 알레르기나 식이 제한을 알려주세요. 감사합니다.",
+"特殊場合安排（生日/蜜月/紀念日）":"안녕하세요, 생일, 허니문, 기념일, 약혼 등 특별한 행사가 있으시면 디즈니 크루즈 라인 예약에 메모를 남겨주세요.",
+"帶嬰兒/幼兒同行":"안녕하세요, 영아/유아 동반 여행 관련 정보: 1. 유모차 반입은 가능하지만 복도나 공용 공간에 세워두는 것은 금지됩니다; 접이식 경량 타입을 권장합니다. 2. 아기 침대(Pack'n Play)는 '내 예약 → 특별 요청'을 통해 무료로 신청할 수 있으며, 재고에 따라 다릅니다. 3. 기저귀, 젖병, 아기 샴푸 등 기본 용품은 선내 매장에서 구입할 수 있습니다. 4. 모유는 기내 반입 수하물로 운반할 수 있습니다. 다른 필요 사항이 있으면 알려주세요. 감사합니다.",
+"自行前往港口（捷運/計程車）":"안녕하세요, 싱가포르 마리나 베이 크루즈 센터로 가는 교통편:\n1. MRT: 남북선(빨간선) 종점 NS28 마리나 사우스 피어역까지 탑승 후 안내판을 따라 도보 약 5~10분(약 500~600미터).\n2. 택시: 출발지에 따라 약 USD 15~30.\n디즈니 공식 셔틀 서비스(편도 USD 23/인)가 필요하시면 알려주시면 예약을 도와드리겠습니다. 감사합니다.",
+"兩/多筆同行單想綁定一起":"안녕하세요, 두 예약이 성공적으로 연결되었습니다. 디즈니 크루즈 라인 앱에 로그인하여 확인해 주세요.",
+"連通房需求":"안녕하세요, 커넥팅룸 요청에 대해 대신 메모를 남겨드렸습니다. 그러나 실제 배정은 선박의 최종 구성에 따라 달라지므로 보장할 수 없습니다. 불편을 드려 죄송합니다."
+}
+};
+
+function getCSReply(sub) {
+  if (currentLang === 'zh') return sub.cs_reply;
+  // Check if sheet has translation columns
+  const fromSheet = sub['cs_reply_' + currentLang];
+  if (fromSheet) return fromSheet;
+  // Fall back to embedded translations
+  return (TRANS[currentLang] && TRANS[currentLang][sub.name]) || sub.cs_reply;
+}
+
 // ─── Category colour / icon maps ──────────────────────────────────────────
 const CC = {
   "APP/登入問題":"#6366f1","APP/資料問題":"#818cf8","APP/線上報到":"#a5b4fc",
@@ -130,7 +331,6 @@ const CI = {
   "房號/艙房":"🚪","退款+取消":"💸","接駁/交通":"🚐","加人/升等":"👥"
 };
 
-// Fallback color for new categories not in CC map
 function hashColor(str) {
   let h = 0;
   for (let i = 0; i < str.length; i++) h = Math.imul(31, h) + str.charCodeAt(i) | 0;
@@ -138,7 +338,6 @@ function hashColor(str) {
   return palette[Math.abs(h) % palette.length];
 }
 
-// PAX signals for boost scoring
 const PAX_SIGNALS = [
   "date of birth","dob","be corrected","be updated","be amended","corrected and updated",
   "birthday","passport update","passport renew","name incorrect","name wrong","name correct",
@@ -158,9 +357,7 @@ let expandedCat = null;
 let expandedSub = null;
 
 // ─── CSV Parser ────────────────────────────────────────────────────────────
-// Handles quoted fields containing embedded commas and newlines (RFC 4180)
 function parseCSV(raw) {
-  // Normalise line endings to \n
   const text = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   const rows = [];
   let row = [];
@@ -172,36 +369,34 @@ function parseCSV(raw) {
     const next = text[i + 1];
 
     if (inQuotes) {
-      if (c === '"' && next === '"') { field += '"'; i++; }  // escaped quote
-      else if (c === '"')           { inQuotes = false; }    // closing quote
-      else                          { field += c; }          // regular char inside quotes
+      if (c === '"' && next === '"') { field += '"'; i++; }
+      else if (c === '"')           { inQuotes = false; }
+      else                          { field += c; }
     } else {
       if      (c === '"') { inQuotes = true; }
       else if (c === ',') { row.push(field); field = ''; }
       else if (c === '\n') {
         row.push(field);
-        if (row.some(f => f.trim())) rows.push(row);  // skip blank rows
+        if (row.some(f => f.trim())) rows.push(row);
         row = []; field = '';
       } else {
         field += c;
       }
     }
   }
-  // Final field / row (file may not end with \n)
   row.push(field);
   if (row.some(f => f.trim())) rows.push(row);
   return rows;
 }
 
 // ─── Build KB from CSV rows ───────────────────────────────────────────────
-// Expected columns (row 0 = header, skipped):
-//   0: 分類名稱  1: 情境名稱  2: 案件數  3: 關鍵字（每行一個）
-//   4: OP 作業步驟  5: OP 告知 CS  6: CS 對客回覆  7: 備注
+// Columns: 0:分類 1:情境 2:案件數 3:關鍵字 4:OP作業 5:OP告知CS 6:CS中文回覆 7:備注
+//          8:CS英文回覆(optional) 9:CS日文回覆(optional) 10:CS韓文回覆(optional)
 function buildKBFromCSV(rows) {
   const catMap = new Map();
   const catOrder = [];
 
-  for (let i = 1; i < rows.length; i++) {  // skip header
+  for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
     if (!r || r.length < 7) continue;
 
@@ -215,9 +410,11 @@ function buildKBFromCSV(rows) {
     const op_to_cs  = (r[5] || '').trim();
     const cs_reply  = (r[6] || '').trim();
     const notes     = (r[7] || '').trim();
+    const cs_reply_en = (r[8] || '').trim();
+    const cs_reply_ja = (r[9] || '').trim();
+    const cs_reply_ko = (r[10] || '').trim();
 
     if (!catMap.has(catName)) {
-      // Generate a stable cat ID from the order index
       const catId = 'cat_' + catOrder.length;
       catMap.set(catName, { id: catId, name: catName, total_cases: 0, subcategories: [] });
       catOrder.push(catName);
@@ -225,7 +422,7 @@ function buildKBFromCSV(rows) {
     const cat = catMap.get(catName);
     const subId = cat.id + '_sub_' + cat.subcategories.length;
     cat.total_cases += cases;
-    cat.subcategories.push({ id: subId, name: subName, cases, keywords, op_action, op_to_cs, cs_reply, notes });
+    cat.subcategories.push({ id: subId, name: subName, cases, keywords, op_action, op_to_cs, cs_reply, notes, cs_reply_en, cs_reply_ja, cs_reply_ko });
   }
 
   return { categories: catOrder.map(n => catMap.get(n)) };
@@ -257,7 +454,6 @@ function matchMsg(msg) {
         }
       });
 
-      // PAX boost — match by sub.name since IDs are auto-generated
       if (isPaxChange && sub.name.includes('其他資料修改')) score += 15;
       if (isPaxChange && sub.name.includes('修改國籍') && (m.includes('國籍') || m.includes('nationality'))) score += 20;
       if (isPaxChange && sub.name.includes('催一般')) score = Math.max(0, score - 10);
@@ -274,7 +470,6 @@ function matchMsg(msg) {
 function esc(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
-
 function catColor(name) { return CC[name] || hashColor(name); }
 function catIcon(name)  { return CI[name] || '📌'; }
 
@@ -287,6 +482,11 @@ function cardHTML(sub, ridx) {
     ? '<span class="matched-kws">命中: ' + esc(sub.matched.slice(0, 4).join(', ')) + '</span>' : '';
   const bestBadge   = (ridx === 0) ? '<span class="badge-best">最佳匹配</span>' : '';
   const notesHtml   = sub.notes ? '<div class="notes-box">⚠️ ' + esc(sub.notes) + '</div>' : '';
+
+  const csReply = getCSReply(sub);
+  const langLabels = {zh:'🔵 CS 對客回覆（中文）', en:'🔵 CS Reply (English)', ja:'🔵 CS 返信（日本語）', ko:'🔵 CS 답변（한국어）'};
+  const csLabel = langLabels[currentLang] || '🔵 CS 對客回覆';
+
   const opToCs = sub.op_to_cs ? `
     <div class="card-section">
       <div class="section-row">
@@ -295,6 +495,7 @@ function cardHTML(sub, ridx) {
       </div>
       <div class="section-body" style="background:rgba(16,185,129,0.08);color:#6ee7b7">${esc(sub.op_to_cs).replace(/\n/g, '<br>')}</div>
     </div>` : '';
+
   return `
     <div class="result-card" style="border-left:3px solid ${c}">
       ${bestBadge}
@@ -313,10 +514,10 @@ function cardHTML(sub, ridx) {
       ${opToCs}
       <div class="card-section">
         <div class="section-row">
-          <span class="section-label" style="color:#3b82f6">🔵 CS 對客回覆</span>
-          <button class="copy-btn" ${ref} data-field="cs_reply">📋 複製</button>
+          <span class="section-label" style="color:#3b82f6">${csLabel}</span>
+          <button class="copy-btn" ${ref} data-field="cs_reply_current">📋 複製</button>
         </div>
-        <div class="section-body" style="background:rgba(59,130,246,0.08);color:#93c5fd">${esc(sub.cs_reply).replace(/\n/g, '<br>')}</div>
+        <div class="section-body" style="background:rgba(59,130,246,0.08);color:#93c5fd">${esc(csReply).replace(/\n/g, '<br>')}</div>
       </div>
       ${notesHtml}
     </div>`;
@@ -441,10 +642,10 @@ document.addEventListener('click', function(e) {
   let text = '';
   if (btn.dataset.ridx !== undefined) {
     const r = currentResults[parseInt(btn.dataset.ridx)];
-    if (r) text = r[field] || '';
+    if (r) text = field === 'cs_reply_current' ? getCSReply(r) : (r[field] || '');
   } else if (btn.dataset.subid) {
     const s = subMap[btn.dataset.subid];
-    if (s) text = s[field] || '';
+    if (s) text = field === 'cs_reply_current' ? getCSReply(s) : (s[field] || '');
   }
   if (!text) return;
   navigator.clipboard.writeText(text).catch(() => {
@@ -458,13 +659,13 @@ document.addEventListener('click', function(e) {
   setTimeout(() => { btn.textContent = '📋 複製'; btn.classList.remove('copied'); }, 1500);
 });
 
-// ─── Initialise: fetch CSV → build KB → start app ─────────────────────────
+// ─── Initialise ───────────────────────────────────────────────────────────
 async function fetchWithRetry(url, attempts) {
   let lastErr;
   for (let i = 0; i < attempts; i++) {
     try {
       const controller = new AbortController();
-      const tid = setTimeout(() => controller.abort(), 12000); // 12s timeout
+      const tid = setTimeout(() => controller.abort(), 12000);
       const resp = await fetch(url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now(), {
         cache: 'no-store',
         signal: controller.signal
@@ -484,14 +685,11 @@ async function init() {
   const loadingText = document.getElementById('loading-text');
   try {
     loadingText.textContent = '正在從 Google Sheets 載入最新知識庫...';
-
     const raw = await fetchWithRetry(SHEET_URL, 3);
-
     loadingText.textContent = '解析資料中...';
     const rows = parseCSV(raw);
     KB = buildKBFromCSV(rows);
 
-    // Rebuild allSubs and subMap
     allSubs.length = 0;
     Object.keys(subMap).forEach(k => delete subMap[k]);
     KB.categories.forEach(cat => {
@@ -502,11 +700,9 @@ async function init() {
       });
     });
 
-    // Update subtitle
     document.getElementById('subtitle').textContent =
-      allSubs.length + ' 個情境 · 中英文辨識 · 一鍵複製回覆';
+      allSubs.length + ' 個情境 · 中英日韓辨識 · 多語言回覆';
 
-    // Hide loading overlay
     const overlay = document.getElementById('loading-overlay');
     overlay.classList.add('hidden');
     setTimeout(() => { overlay.style.display = 'none'; }, 420);
