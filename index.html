@@ -693,6 +693,37 @@ async function init() {
     const rows = parseCSV(raw);
     KB = buildKBFromCSV(rows);
 
+    // Static fallback: inject "合作飯店旅客詢問優先登船接駁" if not in sheet
+    (function injectStaticEntries() {
+      const STATIC_ENTRIES = [
+        {
+          catName: '接駁/交通',
+          name: '合作飯店旅客詢問優先登船接駁',
+          cases: 1,
+          keywords: ['優先上船','優先登船','合作飯店','飯店合作','飯店接駁','priority boarding','partner hotel','先上船','預約接駁','聖淘沙香格里拉','濱海灣金沙','萊佛士','Sentosa Shangri-La','Marina Bay Sands','Raffles','飯店優先'],
+          op_action: '① 確認旅客所提及的飯店是否為迪士尼郵輪合作飯店（合作飯店包含：濱海灣金沙、萊佛士、聖淘沙香格里拉等）。\n② 請 CS 向旅客確認是否要預訂接駁服務。\n③ 待 CS 回覆確認後，協助旅客預訂接駁服務（提供入住飯店名稱及接駁日期）。\n④ 提供補價差連結給旅客：https://www.kkday.com/zh-tw/product/579218',
+          op_to_cs: '請先向旅客確認是否要預訂接駁服務。旅客所提及的飯店為迪士尼郵輪合作飯店，旅客須有實際入住該飯店才能預訂接駁。完成接駁預訂後，旅客可享有優先登船的福利，接駁費用為單程每人 23 美金。',
+          cs_reply: '您好！感謝您的詢問。迪士尼郵輪與部分新加坡飯店有合作，入住合作飯店的旅客預訂官方接駁服務後，可享優先登船的福利。接駁費用為單程每人 23 美金，且需實際入住合作飯店方可預訂。\n\n如確認需要預訂，請告知：\n1. 入住飯店名稱\n2. 需要接駁的日期\n\n我們將盡快為您安排，謝謝！',
+          notes: '合作飯店包含濱海灣金沙、萊佛士、聖淘沙香格里拉等；須實際入住合作飯店才可預訂；優先登船為預訂接駁後的附加福利，非單獨申請',
+          cs_reply_en: '', cs_reply_ja: '', cs_reply_ko: ''
+        }
+      ];
+
+      STATIC_ENTRIES.forEach(entry => {
+        let cat = KB.categories.find(c => c.name === entry.catName);
+        if (!cat) {
+          cat = { id: 'cat_static_' + entry.catName, name: entry.catName, total_cases: 0, subcategories: [] };
+          KB.categories.push(cat);
+        }
+        const exists = cat.subcategories.some(s => s.name === entry.name);
+        if (!exists) {
+          const subId = cat.id + '_sub_static_' + cat.subcategories.length;
+          cat.total_cases += entry.cases;
+          cat.subcategories.push(Object.assign({ id: subId }, entry));
+        }
+      });
+    })();
+
     allSubs.length = 0;
     Object.keys(subMap).forEach(k => delete subMap[k]);
     KB.categories.forEach(cat => {
