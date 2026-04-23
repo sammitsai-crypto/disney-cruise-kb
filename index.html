@@ -109,7 +109,7 @@ textarea:focus{border-color:rgba(99,102,241,0.5)}
   <div id="classify-pane" class="pane">
     <div class="input-card">
       <p class="hint-text">貼上客人或 CS 的訊息（中文、英文、日文、韓文皆可），自動辨識問題類型並帶出 OP 作業 &amp; CS 回覆</p>
-      <textarea id="msg-input" placeholder="貼上訊息內容..." oninput="onInputChange()"></textarea>
+      <textarea id="msg-input" placeholder="貼上訊息內容..." oninput="onInputChange()" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();if(!document.getElementById('match-btn').disabled)doMatch();}"></textarea>
       <div class="btn-row">
         <button class="primary-btn" id="match-btn" disabled onclick="doMatch()">⚡ 辨識並帶出回覆</button>
         <button class="secondary-btn" id="clear-btn" style="display:none" onclick="clearAll()">清除</button>
