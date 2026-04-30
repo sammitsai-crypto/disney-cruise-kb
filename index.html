@@ -467,6 +467,211 @@ function getCSReply(sub) {
   return (TRANS[currentLang] && TRANS[currentLang][sub.name]) || sub.cs_reply;
 }
 
+// ─── Category & subcategory name translations ─────────────────────────────
+const CAT_TRANS = {
+  en: {
+    "APP/登入問題":"APP/Login Issues","APP/資料問題":"APP/Data Issues",
+    "APP/線上報到":"APP/Online Check-in","催促/進度查詢":"Follow-up/Status Check",
+    "50%折抵":"50% Credit","旅客資料修改":"Passenger Data Edit",
+    "房號/艙房":"Cabin/Room","退款+取消":"Refund+Cancellation",
+    "接駁/交通":"Shuttle/Transport","加人/升等":"Add Pax/Upgrade"
+  },
+  ja: {
+    "APP/登入問題":"APP/ログイン問題","APP/資料問題":"APP/データ問題",
+    "APP/線上報到":"APP/オンラインチェックイン","催促/進度查詢":"督促/進捗確認",
+    "50%折抵":"50%クレジット","旅客資料修改":"旅客情報修正",
+    "房號/艙房":"客室番号/客室","退款+取消":"返金+キャンセル",
+    "接駁/交通":"シャトル/交通","加人/升等":"旅客追加/アップグレード"
+  },
+  ko: {
+    "APP/登入問題":"APP/로그인 문제","APP/資料問題":"APP/데이터 문제",
+    "APP/線上報到":"APP/온라인 체크인","催促/進度查詢":"독촉/진행 상황 조회",
+    "50%折抵":"50% 크레딧","旅客資料修改":"탑승객 정보 수정",
+    "房號/艙房":"객실 번호/객실","退款+取消":"환불+취소",
+    "接駁/交通":"셔틀/교통","加人/升等":"탑승객 추가/업그레이드"
+  }
+};
+
+const SUB_TRANS = {
+  en: {
+    "無法登入DCL APP":"Cannot Log In to DCL App",
+    "APP/官網找不到設定":"Booking Not Found in App/Website",
+    "超過30天仍找不到設定":"Still Not Found After 30 Days",
+    "登入顯示尚未付清款項":"Login Shows Unpaid Balance",
+    "APP上旅客資料顯示錯誤":"Incorrect Passenger Info in App",
+    "APP顯示航空旅行稅（Air Travel Taxes）":"App Shows Air Travel Taxes",
+    "APP顯示旅客人數不符":"App Shows Wrong Passenger Count",
+    "無法進行線上Check-in":"Unable to Complete Online Check-in",
+    "APP內預訂/訂餐功能問題":"App Booking/Dining Reservation Issue",
+    "線上報到顯示未付款":"Online Check-in Shows Unpaid",
+    "報到照片/護照上傳問題":"Check-in Photo/Passport Upload Issue",
+    "催一般處理進度":"Follow Up on General Processing",
+    "催憑證/確認信":"Follow Up on Voucher/Confirmation Email",
+    "催資料修改進度":"Follow Up on Data Modification",
+    "催問50%退款進度":"Follow Up on 50% Refund",
+    "提供新單設定申請折抵":"Submit New Order for 50% Credit",
+    "詢問是否符合折抵資格":"Inquire About Credit Eligibility",
+    "已上表/提交退款申請":"Refund Application Submitted",
+    "退款金額有疑問":"Refund Amount Dispute",
+    "其他50%折抵問題":"Other 50% Credit Issues",
+    "修改國籍":"Modify Nationality",
+    "其他資料修改（姓名/出生日期/護照/Email/性別）":"Other Data Modification (Name/DOB/Passport/Email/Gender)",
+    "詢問房號編碼":"Cabin Number Code Inquiry",
+    "要求連通房/相鄰房":"Request Connecting/Adjacent Cabin",
+    "指定房號位置偏好":"Specify Cabin Location Preference",
+    "換房/換主題房":"Change Cabin/Theme Cabin",
+    "其他房號問題":"Other Cabin Issues",
+    "一般取消/退款申請":"General Cancellation/Refund Request",
+    "催退款進度":"Follow Up on Refund",
+    "退款金額疑問/要明細":"Refund Amount Inquiry/Request Breakdown",
+    "部分退款申請":"Partial Refund Request",
+    "特殊原因取消（家庭/健康）":"Cancellation for Special Reasons (Family/Health)",
+    "取消後重新訂購":"Rebook After Cancellation",
+    "重複預訂/訂錯取消":"Cancel Duplicate/Wrong Booking",
+    "詢問如何預訂接駁":"How to Book Shuttle Service",
+    "確認是否包含接駁服務":"Confirm if Shuttle is Included",
+    "接駁時間查詢/更改":"Shuttle Time Inquiry/Change",
+    "兌換碼問題（過期/無法使用）":"Redemption Code Issue (Expired/Invalid)",
+    "其他接駁問題":"Other Shuttle Issues",
+    "新增旅客（詢問可行性/費用）":"Add Passenger (Feasibility/Cost Inquiry)",
+    "升等艙房":"Cabin Upgrade",
+    "減少人數":"Reduce Passenger Count",
+    "攜帶酒精上船":"Bringing Alcohol Onboard",
+    "攜帶食物/飲料上船":"Bringing Food/Drinks Onboard",
+    "電器攜帶限制":"Electronics Restrictions",
+    "船上吸煙政策":"Onboard Smoking Policy",
+    "船上消費方式":"Onboard Payment Methods",
+    "特殊膳食/食物過敏申請":"Special Diet/Food Allergy Request",
+    "特殊場合安排（生日/蜜月/紀念日）":"Special Occasion Arrangement (Birthday/Honeymoon/Anniversary)",
+    "帶嬰兒/幼兒同行":"Traveling with Infants/Toddlers",
+    "自行前往港口（捷運/計程車）":"Self-Transfer to Port (MRT/Taxi)",
+    "兩/多筆同行單想綁定一起":"Link Multiple Bookings",
+    "連通房需求":"Connecting Room Request",
+    "合作飯店旅客詢問優先登船接駁":"Partner Hotel Guest Priority Boarding Shuttle"
+  },
+  ja: {
+    "無法登入DCL APP":"DCL アプリにログインできない",
+    "APP/官網找不到設定":"APP/公式サイトで設定が見つからない",
+    "超過30天仍找不到設定":"30日経過しても設定が見つからない",
+    "登入顯示尚未付清款項":"ログイン時に未払い表示",
+    "APP上旅客資料顯示錯誤":"APPの旅客情報が誤って表示される",
+    "APP顯示航空旅行稅（Air Travel Taxes）":"APPに航空旅行税が表示される",
+    "APP顯示旅客人數不符":"APPに旅客人数の不一致表示",
+    "無法進行線上Check-in":"オンラインチェックインができない",
+    "APP內預訂/訂餐功能問題":"APP内の予約/食事予約機能の問題",
+    "線上報到顯示未付款":"オンラインチェックインに未払い表示",
+    "報到照片/護照上傳問題":"チェックイン写真/パスポートのアップロード問題",
+    "催一般處理進度":"一般処理の進捗確認",
+    "催憑證/確認信":"バウチャー/確認書の催促",
+    "催資料修改進度":"データ修正の進捗確認",
+    "催問50%退款進度":"50%返金の進捗確認",
+    "提供新單設定申請折抵":"新予約提供と50%クレジット申請",
+    "詢問是否符合折抵資格":"クレジット適用資格の問い合わせ",
+    "已上表/提交退款申請":"返金申請書提出済み",
+    "退款金額有疑問":"返金金額の疑問",
+    "其他50%折抵問題":"その他の50%クレジット問題",
+    "修改國籍":"国籍の修正",
+    "其他資料修改（姓名/出生日期/護照/Email/性別）":"その他の情報修正（氏名/生年月日/パスポート/メール/性別）",
+    "詢問房號編碼":"客室番号コードの問い合わせ",
+    "要求連通房/相鄰房":"コネクティングルーム/隣接客室のリクエスト",
+    "指定房號位置偏好":"客室位置の希望指定",
+    "換房/換主題房":"客室変更/テーマ客室変更",
+    "其他房號問題":"その他の客室問題",
+    "一般取消/退款申請":"一般的なキャンセル/返金申請",
+    "催退款進度":"返金進捗の確認",
+    "退款金額疑問/要明細":"返金金額の問い合わせ/明細リクエスト",
+    "部分退款申請":"一部返金申請",
+    "特殊原因取消（家庭/健康）":"特別な理由によるキャンセル（家庭/健康）",
+    "取消後重新訂購":"キャンセル後の再予約",
+    "重複預訂/訂錯取消":"重複/誤った予約のキャンセル",
+    "詢問如何預訂接駁":"シャトル予約方法の問い合わせ",
+    "確認是否包含接駁服務":"シャトルサービス包含確認",
+    "接駁時間查詢/更改":"シャトル時間の照会/変更",
+    "兌換碼問題（過期/無法使用）":"引換コードの問題（期限切れ/使用不可）",
+    "其他接駁問題":"その他のシャトル問題",
+    "新增旅客（詢問可行性/費用）":"旅客追加（可能性/費用の問い合わせ）",
+    "升等艙房":"客室アップグレード",
+    "減少人數":"旅客数削減",
+    "攜帶酒精上船":"酒類の持ち込み",
+    "攜帶食物/飲料上船":"食べ物/飲み物の持ち込み",
+    "電器攜帶限制":"電化製品の持ち込み制限",
+    "船上吸煙政策":"船内禁煙ポリシー",
+    "船上消費方式":"船内決済方法",
+    "特殊膳食/食物過敏申請":"特別食/食物アレルギーリクエスト",
+    "特殊場合安排（生日/蜜月/紀念日）":"特別な場合の手配（誕生日/ハネムーン/記念日）",
+    "帶嬰兒/幼兒同行":"乳幼児連れ旅行",
+    "自行前往港口（捷運/計程車）":"自力での港への移動（MRT/タクシー）",
+    "兩/多筆同行單想綁定一起":"複数予約のリンク",
+    "連通房需求":"コネクティングルームリクエスト",
+    "合作飯店旅客詢問優先登船接駁":"提携ホテル宿泊客の優先乗船シャトル問い合わせ"
+  },
+  ko: {
+    "無法登入DCL APP":"DCL 앱 로그인 불가",
+    "APP/官網找不到設定":"APP/공식 사이트에서 설정 없음",
+    "超過30天仍找不到設定":"30일 경과 후에도 설정 없음",
+    "登入顯示尚未付清款項":"로그인 시 미결제 표시",
+    "APP上旅客資料顯示錯誤":"APP 탑승객 정보 오류 표시",
+    "APP顯示航空旅行稅（Air Travel Taxes）":"APP에 항공 여행세 표시",
+    "APP顯示旅客人數不符":"APP 탑승객 수 불일치",
+    "無法進行線上Check-in":"온라인 체크인 불가",
+    "APP內預訂/訂餐功能問題":"APP 내 예약/식당 예약 문제",
+    "線上報到顯示未付款":"온라인 체크인 미결제 표시",
+    "報到照片/護照上傳問題":"체크인 사진/여권 업로드 문제",
+    "催一般處理進度":"일반 처리 진행 상황 독촉",
+    "催憑證/確認信":"바우처/확인서 발송 독촉",
+    "催資料修改進度":"정보 수정 진행 상황 독촉",
+    "催問50%退款進度":"50% 환불 진행 상황 독촉",
+    "提供新單設定申請折抵":"새 예약 제공 및 크레딧 신청",
+    "詢問是否符合折抵資格":"크레딧 적용 자격 문의",
+    "已上表/提交退款申請":"환불 신청서 제출 완료",
+    "退款金額有疑問":"환불 금액 문의",
+    "其他50%折抵問題":"기타 50% 크레딧 문제",
+    "修改國籍":"국적 수정",
+    "其他資料修改（姓名/出生日期/護照/Email/性別）":"기타 정보 수정（이름/생년월일/여권/이메일/성별）",
+    "詢問房號編碼":"객실 번호 코드 문의",
+    "要求連通房/相鄰房":"커넥팅룸/인접 객실 요청",
+    "指定房號位置偏好":"객실 위치 선호 지정",
+    "換房/換主題房":"객실 변경/테마 객실 변경",
+    "其他房號問題":"기타 객실 문제",
+    "一般取消/退款申請":"일반 취소/환불 신청",
+    "催退款進度":"환불 진행 상황 독촉",
+    "退款金額疑問/要明細":"환불 금액 문의/명세 요청",
+    "部分退款申請":"부분 환불 신청",
+    "特殊原因取消（家庭/健康）":"특별 사유 취소（가족/건강）",
+    "取消後重新訂購":"취소 후 재예약",
+    "重複預訂/訂錯取消":"중복/잘못된 예약 취소",
+    "詢問如何預訂接駁":"셔틀 예약 방법 문의",
+    "確認是否包含接駁服務":"셔틀 서비스 포함 여부 확인",
+    "接駁時間查詢/更改":"셔틀 시간 조회/변경",
+    "兌換碼問題（過期/無法使用）":"교환 코드 문제（만료/사용 불가）",
+    "其他接駁問題":"기타 셔틀 문제",
+    "新增旅客（詢問可行性/費用）":"탑승객 추가（가능 여부/비용 문의）",
+    "升等艙房":"객실 업그레이드",
+    "減少人數":"탑승객 수 감소",
+    "攜帶酒精上船":"주류 반입",
+    "攜帶食物/飲料上船":"음식/음료 반입",
+    "電器攜帶限制":"전자제품 반입 제한",
+    "船上吸煙政策":"선내 흡연 정책",
+    "船上消費方式":"선내 결제 방법",
+    "特殊膳食/食物過敏申請":"특별 식단/음식 알레르기 신청",
+    "特殊場合安排（生日/蜜月/紀念日）":"특별 행사 준비（생일/신혼여행/기념일）",
+    "帶嬰兒/幼兒同行":"영아/유아 동반",
+    "自行前往港口（捷運/計程車）":"자가 이동（지하철/택시）",
+    "兩/多筆同行單想綁定一起":"여러 예약 연결",
+    "連通房需求":"커넥팅룸 요청",
+    "合作飯店旅客詢問優先登船接駁":"제휴 호텔 숙박객 우선 탑승 셔틀 문의"
+  }
+};
+
+function getCatName(zhName) {
+  if (currentLang === 'zh') return zhName;
+  return (CAT_TRANS[currentLang] && CAT_TRANS[currentLang][zhName]) || zhName;
+}
+function getSubName(zhName) {
+  if (currentLang === 'zh') return zhName;
+  return (SUB_TRANS[currentLang] && SUB_TRANS[currentLang][zhName]) || zhName;
+}
+
 // ─── Category colour / icon maps ──────────────────────────────────────────
 const CC = {
   "APP/登入問題":"#6366f1","APP/資料問題":"#818cf8","APP/線上報到":"#a5b4fc",
@@ -648,8 +853,8 @@ function cardHTML(sub, ridx) {
     <div class="result-card" style="border-left:3px solid ${c}">
       ${bestBadge}
       <div class="card-header">
-        <span class="cat-badge" style="color:${c};background:${c}22;border:1px solid ${c}44">${icon} ${esc(sub.catName)}</span>
-        <span class="sub-name">${esc(sub.name)}</span>
+        <span class="cat-badge" style="color:${c};background:${c}22;border:1px solid ${c}44">${icon} ${esc(getCatName(sub.catName))}</span>
+        <span class="sub-name">${esc(getSubName(sub.name))}</span>
         ${matchedStr}
       </div>
       <div class="card-section">
@@ -681,13 +886,27 @@ function switchTab(t) {
 }
 
 // ─── Classify ─────────────────────────────────────────────────────────────
+function detectLang(text) {
+  const hasKorean   = /[가-힯ᄀ-ᇿ㄰-㆏]/.test(text);
+  const hasJapanese = /[぀-ヿ]/.test(text);
+  if (hasKorean)   return 'ko';
+  if (hasJapanese) return 'ja';
+  const latinCount = (text.match(/[a-zA-Z]/g) || []).length;
+  const cjkCount   = (text.match(/[一-鿿]/g) || []).length;
+  if (latinCount > cjkCount && latinCount > 5) return 'en';
+  return null;
+}
+
 function onInputChange() {
   const v = document.getElementById('msg-input').value;
   document.getElementById('match-btn').disabled = !v.trim();
   if (!v.trim()) {
     document.getElementById('results-area').innerHTML = '';
     document.getElementById('clear-btn').style.display = 'none';
+    return;
   }
+  const detected = detectLang(v);
+  if (detected && detected !== currentLang) setLang(detected);
 }
 function clearAll() {
   document.getElementById('msg-input').value = '';
@@ -735,8 +954,8 @@ function renderBrowse() {
       const isOpen = expandedSub === s.id;
       html += `<div class="search-result-row" style="border-left:3px solid ${c}" onclick="toggleSearchSub('${s.id}')">
         <div class="sr-inner">
-          <span class="cat-badge" style="color:${c};background:${c}22;border:1px solid ${c}44">${catIcon(s.catName)} ${esc(s.catName)}</span>
-          <span class="sub-label">${esc(s.name)}</span>
+          <span class="cat-badge" style="color:${c};background:${c}22;border:1px solid ${c}44">${catIcon(s.catName)} ${esc(getCatName(s.catName))}</span>
+          <span class="sub-label">${esc(getSubName(s.name))}</span>
           <span class="sr-meta">${t().cases(s.cases)} ${isOpen ? '▼' : '▶'}</span>
         </div>
         ${isOpen ? '<div class="sub-detail" onclick="event.stopPropagation()">' + cardHTML(s) + '</div>' : ''}
@@ -754,7 +973,7 @@ function renderBrowse() {
           const subOpen = expandedSub === sub.id;
           subsHtml += `<div class="sub-row" onclick="event.stopPropagation();toggleSub('${sub.id}')">
             <div class="sub-inner">
-              <span class="sub-label">${esc(sub.name)}</span>
+              <span class="sub-label">${esc(getSubName(sub.name))}</span>
               <span class="sub-meta">${t().cases(sub.cases)} ${subOpen ? '▼' : '▶'}</span>
             </div>
             ${subOpen ? '<div class="sub-detail" onclick="event.stopPropagation()">' + cardHTML(Object.assign({}, sub, {catName: cat.name, catId: cat.id})) + '</div>' : ''}
@@ -765,7 +984,7 @@ function renderBrowse() {
         <div class="cat-row" style="border-left:3px solid ${c}" onclick="toggleCat('${cat.id}')">
           <div class="cat-inner">
             <span class="cat-icon">${catIcon(cat.name)}</span>
-            <span class="cat-name">${esc(cat.name)}</span>
+            <span class="cat-name">${esc(getCatName(cat.name))}</span>
             <span class="cat-count" style="color:${c}">${t().cases(cat.total_cases)}</span>
             <span class="cat-meta">${t().scenarios(cat.subcategories.length)} ${isOpen ? '▼' : '▶'}</span>
           </div>
