@@ -98,7 +98,7 @@ textarea:focus{border-color:rgba(99,102,241,0.5)}
       <button class="tab-btn" id="tab-browse" onclick="switchTab('browse')">📖 瀏覽知識庫</button>
     </div>
     <div class="lang-bar">
-      <span class="lang-label">CS 回覆語言：</span>
+      <span class="lang-label" id="lang-label">CS 回覆語言：</span>
       <button class="lang-btn active" id="lang-zh" onclick="setLang('zh')">🇹🇼 中文</button>
       <button class="lang-btn" id="lang-en" onclick="setLang('en')">🇬🇧 English</button>
       <button class="lang-btn" id="lang-ja" onclick="setLang('ja')">🇯🇵 日本語</button>
@@ -108,7 +108,7 @@ textarea:focus{border-color:rgba(99,102,241,0.5)}
 
   <div id="classify-pane" class="pane">
     <div class="input-card">
-      <p class="hint-text">貼上客人或 CS 的訊息（中文、英文、日文、韓文皆可），自動辨識問題類型並帶出 OP 作業 &amp; CS 回覆</p>
+      <p class="hint-text" id="hint-text">貼上客人或 CS 的訊息（中文、英文、日文、韓文皆可），自動辨識問題類型並帶出 OP 作業 &amp; CS 回覆</p>
       <textarea id="msg-input" placeholder="貼上訊息內容..." oninput="onInputChange()" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();if(!document.getElementById('match-btn').disabled)doMatch();}"></textarea>
       <div class="btn-row">
         <button class="primary-btn" id="match-btn" disabled onclick="doMatch()">⚡ 辨識並帶出回覆</button>
@@ -131,11 +131,156 @@ const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRNrhyhY3Ibeg
 // ─── Language state ────────────────────────────────────────────────────────
 let currentLang = 'zh';
 
+// ─── UI translations ──────────────────────────────────────────────────────
+const UI_TEXT = {
+  zh: {
+    title: 'SCM Disney Cruise 客服知識庫',
+    tabClassify: '🤖 訊息辨識',
+    tabBrowse: '📖 瀏覽知識庫',
+    langLabel: 'CS 回覆語言：',
+    hintText: '貼上客人或 CS 的訊息（中文、英文、日文、韓文皆可），自動辨識問題類型並帶出 OP 作業 & CS 回覆',
+    placeholder: '貼上訊息內容...',
+    matchBtn: '⚡ 辨識並帶出回覆',
+    clearBtn: '清除',
+    searchPlaceholder: '🔍 搜尋情境、關鍵字、回覆內容...',
+    loading: '正在載入知識庫...',
+    loadingSheet: '正在從 Google Sheets 載入最新知識庫...',
+    parsing: '解析資料中...',
+    subtitle: n => `${n} 個情境 · 中英日韓辨識 · 多語言回覆`,
+    errTitle: '❌ 無法載入知識庫資料',
+    errHint: '請確認網路連線正常，或 Google Sheets 已「發布到網路」',
+    retryBtn: '🔄 重新載入',
+    noResults: '⚠️ 未匹配到已知情境，可能需要新增至知識庫。',
+    resultInfo: (total, shown) => `找到 ${total} 個匹配，顯示前 ${shown} 個`,
+    browseNoResults: '找不到相關內容',
+    searchCount: n => `搜尋結果：${n} 個情境`,
+    bestMatch: '最佳匹配',
+    matched: '命中',
+    opAction: '🔴 OP 下一步作業',
+    opToCs: '🟢 OP 告知給 CS',
+    copyBtn: '📋 複製',
+    copiedBtn: '✅ 已複製',
+    cases: n => `${n}筆`,
+    scenarios: n => `${n}個情境`,
+    csReplyLabel: '🔵 CS 對客回覆（中文）',
+  },
+  en: {
+    title: 'SCM Disney Cruise CS Knowledge Base',
+    tabClassify: '🤖 Classify',
+    tabBrowse: '📖 Browse KB',
+    langLabel: 'CS Reply Language: ',
+    hintText: 'Paste a customer or CS message (Chinese, English, Japanese, or Korean). Auto-detects the issue type and retrieves OP tasks & CS reply.',
+    placeholder: 'Paste message here...',
+    matchBtn: '⚡ Identify & Get Reply',
+    clearBtn: 'Clear',
+    searchPlaceholder: '🔍 Search scenarios, keywords, reply content...',
+    loading: 'Loading knowledge base...',
+    loadingSheet: 'Loading latest knowledge base from Google Sheets...',
+    parsing: 'Parsing data...',
+    subtitle: n => `${n} scenarios · ZH/EN/JA/KO detection · Multilingual reply`,
+    errTitle: '❌ Failed to load knowledge base',
+    errHint: 'Please check your network connection or ensure the Google Sheet is published to the web.',
+    retryBtn: '🔄 Retry',
+    noResults: '⚠️ No matching scenario found. May need to be added to the knowledge base.',
+    resultInfo: (total, shown) => `Found ${total} match(es), showing top ${shown}`,
+    browseNoResults: 'No results found',
+    searchCount: n => `Search results: ${n} scenario(s)`,
+    bestMatch: 'Best Match',
+    matched: 'Matched',
+    opAction: '🔴 OP Next Steps',
+    opToCs: '🟢 OP Note to CS',
+    copyBtn: '📋 Copy',
+    copiedBtn: '✅ Copied',
+    cases: n => `${n} case(s)`,
+    scenarios: n => `${n} scenario(s)`,
+    csReplyLabel: '🔵 CS Reply (English)',
+  },
+  ja: {
+    title: 'SCM Disney Cruise CS ナレッジベース',
+    tabClassify: '🤖 メッセージ分類',
+    tabBrowse: '📖 ナレッジ閲覧',
+    langLabel: 'CS返信言語：',
+    hintText: 'お客様またはCSのメッセージを貼り付けてください（中国語・英語・日本語・韓国語対応）。問題タイプを自動識別し、OP作業とCS返信を表示します。',
+    placeholder: 'メッセージを貼り付けてください...',
+    matchBtn: '⚡ 識別して返信を取得',
+    clearBtn: 'クリア',
+    searchPlaceholder: '🔍 シナリオ、キーワード、返信内容を検索...',
+    loading: 'ナレッジベースを読み込み中...',
+    loadingSheet: 'Google Sheetsから最新ナレッジベースを読み込み中...',
+    parsing: 'データを解析中...',
+    subtitle: n => `${n}件のシナリオ · 中英日韓識別 · 多言語対応`,
+    errTitle: '❌ ナレッジベースの読み込みに失敗しました',
+    errHint: 'ネットワーク接続を確認するか、Google Sheetsがウェブに公開されているか確認してください。',
+    retryBtn: '🔄 再試行',
+    noResults: '⚠️ 該当するシナリオが見つかりません。ナレッジベースへの追加が必要かもしれません。',
+    resultInfo: (total, shown) => `${total}件のマッチが見つかりました。上位${shown}件を表示中`,
+    browseNoResults: '関連するコンテンツが見つかりません',
+    searchCount: n => `検索結果：${n}件のシナリオ`,
+    bestMatch: 'ベストマッチ',
+    matched: 'マッチ',
+    opAction: '🔴 OP 次のステップ',
+    opToCs: '🟢 OPからCSへの連絡事項',
+    copyBtn: '📋 コピー',
+    copiedBtn: '✅ コピー済み',
+    cases: n => `${n}件`,
+    scenarios: n => `${n}シナリオ`,
+    csReplyLabel: '🔵 CS返信（日本語）',
+  },
+  ko: {
+    title: 'SCM Disney Cruise CS 지식베이스',
+    tabClassify: '🤖 메시지 분류',
+    tabBrowse: '📖 지식베이스 탐색',
+    langLabel: 'CS 답변 언어：',
+    hintText: '고객 또는 CS의 메시지를 붙여넣으세요（중국어, 영어, 일본어, 한국어 모두 가능). 문제 유형을 자동 식별하여 OP 작업 및 CS 답변을 제공합니다.',
+    placeholder: '메시지를 붙여넣으세요...',
+    matchBtn: '⚡ 식별 및 답변 가져오기',
+    clearBtn: '지우기',
+    searchPlaceholder: '🔍 시나리오, 키워드, 답변 내용 검색...',
+    loading: '지식베이스를 불러오는 중...',
+    loadingSheet: 'Google Sheets에서 최신 지식베이스를 불러오는 중...',
+    parsing: '데이터 파싱 중...',
+    subtitle: n => `${n}개 시나리오 · 중영일한 인식 · 다국어 답변`,
+    errTitle: '❌ 지식베이스를 불러올 수 없습니다',
+    errHint: '네트워크 연결을 확인하거나 Google Sheets가 웹에 게시되었는지 확인해 주세요.',
+    retryBtn: '🔄 다시 시도',
+    noResults: '⚠️ 일치하는 시나리오를 찾을 수 없습니다. 지식베이스에 추가가 필요할 수 있습니다.',
+    resultInfo: (total, shown) => `${total}개 일치, 상위 ${shown}개 표시`,
+    browseNoResults: '관련 내용을 찾을 수 없습니다',
+    searchCount: n => `검색 결과: ${n}개 시나리오`,
+    bestMatch: '최적 매칭',
+    matched: '일치',
+    opAction: '🔴 OP 다음 단계',
+    opToCs: '🟢 OP → CS 전달 사항',
+    copyBtn: '📋 복사',
+    copiedBtn: '✅ 복사됨',
+    cases: n => `${n}건`,
+    scenarios: n => `${n}개 시나리오`,
+    csReplyLabel: '🔵 CS 답변（한국어）',
+  }
+};
+
+function t() { return UI_TEXT[currentLang] || UI_TEXT.zh; }
+
+function applyUILang(lang) {
+  const tx = UI_TEXT[lang] || UI_TEXT.zh;
+  document.querySelector('h1').textContent = tx.title;
+  document.title = tx.title;
+  document.getElementById('tab-classify').textContent = tx.tabClassify;
+  document.getElementById('tab-browse').textContent   = tx.tabBrowse;
+  document.getElementById('lang-label').textContent   = tx.langLabel;
+  document.getElementById('hint-text').textContent    = tx.hintText;
+  document.getElementById('msg-input').placeholder    = tx.placeholder;
+  document.getElementById('match-btn').textContent    = tx.matchBtn;
+  document.getElementById('clear-btn').textContent = tx.clearBtn;
+  document.getElementById('search-box').placeholder   = tx.searchPlaceholder;
+}
+
 function setLang(lang) {
   currentLang = lang;
   ['zh','en','ja','ko'].forEach(l => {
     document.getElementById('lang-' + l).classList.toggle('active', l === lang);
   });
+  applyUILang(lang);
   // Re-render any visible cards
   if (document.getElementById('results-area').innerHTML) doMatch();
   if (document.getElementById('browse-pane').style.display !== 'none') renderBrowse();
@@ -481,20 +626,20 @@ function cardHTML(sub, ridx) {
   const c    = catColor(sub.catName);
   const icon = catIcon(sub.catName);
   const ref  = ridx !== undefined ? 'data-ridx="' + ridx + '"' : 'data-subid="' + sub.id + '"';
+  const tx = t();
   const matchedStr  = (sub.matched && sub.matched.length > 0)
-    ? '<span class="matched-kws">命中: ' + esc(sub.matched.slice(0, 4).join(', ')) + '</span>' : '';
-  const bestBadge   = (ridx === 0) ? '<span class="badge-best">最佳匹配</span>' : '';
+    ? '<span class="matched-kws">' + tx.matched + ': ' + esc(sub.matched.slice(0, 4).join(', ')) + '</span>' : '';
+  const bestBadge   = (ridx === 0) ? '<span class="badge-best">' + tx.bestMatch + '</span>' : '';
   const notesHtml   = sub.notes ? '<div class="notes-box">⚠️ ' + esc(sub.notes) + '</div>' : '';
 
   const csReply = getCSReply(sub);
-  const langLabels = {zh:'🔵 CS 對客回覆（中文）', en:'🔵 CS Reply (English)', ja:'🔵 CS 返信（日本語）', ko:'🔵 CS 답변（한국어）'};
-  const csLabel = langLabels[currentLang] || '🔵 CS 對客回覆';
+  const csLabel = tx.csReplyLabel;
 
   const opToCs = sub.op_to_cs ? `
     <div class="card-section">
       <div class="section-row">
-        <span class="section-label" style="color:#10b981">🟢 OP 告知給 CS</span>
-        <button class="copy-btn" ${ref} data-field="op_to_cs">📋 複製</button>
+        <span class="section-label" style="color:#10b981">${tx.opToCs}</span>
+        <button class="copy-btn" ${ref} data-field="op_to_cs">${tx.copyBtn}</button>
       </div>
       <div class="section-body" style="background:rgba(16,185,129,0.08);color:#6ee7b7">${esc(sub.op_to_cs).replace(/\n/g, '<br>')}</div>
     </div>` : '';
@@ -509,8 +654,8 @@ function cardHTML(sub, ridx) {
       </div>
       <div class="card-section">
         <div class="section-row">
-          <span class="section-label" style="color:#a855f7">🔴 OP 下一步作業</span>
-          <button class="copy-btn" ${ref} data-field="op_action">📋 複製</button>
+          <span class="section-label" style="color:#a855f7">${tx.opAction}</span>
+          <button class="copy-btn" ${ref} data-field="op_action">${tx.copyBtn}</button>
         </div>
         <div class="section-body" style="background:rgba(139,92,246,0.08);color:#d8b4fe">${esc(sub.op_action).replace(/\n/g, '<br>')}</div>
       </div>
@@ -518,7 +663,7 @@ function cardHTML(sub, ridx) {
       <div class="card-section">
         <div class="section-row">
           <span class="section-label" style="color:#3b82f6">${csLabel}</span>
-          <button class="copy-btn" ${ref} data-field="cs_reply_current">📋 複製</button>
+          <button class="copy-btn" ${ref} data-field="cs_reply_current">${tx.copyBtn}</button>
         </div>
         <div class="section-body" style="background:rgba(59,130,246,0.08);color:#93c5fd">${esc(csReply).replace(/\n/g, '<br>')}</div>
       </div>
@@ -557,12 +702,12 @@ function doMatch() {
   const area = document.getElementById('results-area');
   document.getElementById('clear-btn').style.display = 'inline-block';
   if (currentResults.length === 0) {
-    area.innerHTML = '<div class="no-results">⚠️ 未匹配到已知情境，可能需要新增至知識庫。</div>';
+    area.innerHTML = '<div class="no-results">' + t().noResults + '</div>';
     return;
   }
   const top = currentResults.slice(0, 3);
   let html = currentResults.length > 1
-    ? '<div class="result-info">找到 ' + currentResults.length + ' 個匹配，顯示前 ' + top.length + ' 個</div>' : '';
+    ? '<div class="result-info">' + t().resultInfo(currentResults.length, top.length) + '</div>' : '';
   top.forEach((r, i) => { html += cardHTML(r, i); });
   area.innerHTML = html;
 }
@@ -581,10 +726,10 @@ function renderBrowse() {
       s.keywords.some(k => k.toLowerCase().includes(q))
     );
     if (filtered.length === 0) {
-      area.innerHTML = '<div class="no-results">找不到相關內容</div>';
+      area.innerHTML = '<div class="no-results">' + t().browseNoResults + '</div>';
       return;
     }
-    let html = '<div class="search-count">搜尋結果：' + filtered.length + ' 個情境</div>';
+    let html = '<div class="search-count">' + t().searchCount(filtered.length) + '</div>';
     filtered.forEach(s => {
       const c = catColor(s.catName);
       const isOpen = expandedSub === s.id;
@@ -592,7 +737,7 @@ function renderBrowse() {
         <div class="sr-inner">
           <span class="cat-badge" style="color:${c};background:${c}22;border:1px solid ${c}44">${catIcon(s.catName)} ${esc(s.catName)}</span>
           <span class="sub-label">${esc(s.name)}</span>
-          <span class="sr-meta">${s.cases}筆 ${isOpen ? '▼' : '▶'}</span>
+          <span class="sr-meta">${t().cases(s.cases)} ${isOpen ? '▼' : '▶'}</span>
         </div>
         ${isOpen ? '<div class="sub-detail" onclick="event.stopPropagation()">' + cardHTML(s) + '</div>' : ''}
       </div>`;
@@ -610,7 +755,7 @@ function renderBrowse() {
           subsHtml += `<div class="sub-row" onclick="event.stopPropagation();toggleSub('${sub.id}')">
             <div class="sub-inner">
               <span class="sub-label">${esc(sub.name)}</span>
-              <span class="sub-meta">${sub.cases}筆 ${subOpen ? '▼' : '▶'}</span>
+              <span class="sub-meta">${t().cases(sub.cases)} ${subOpen ? '▼' : '▶'}</span>
             </div>
             ${subOpen ? '<div class="sub-detail" onclick="event.stopPropagation()">' + cardHTML(Object.assign({}, sub, {catName: cat.name, catId: cat.id})) + '</div>' : ''}
           </div>`;
@@ -621,8 +766,8 @@ function renderBrowse() {
           <div class="cat-inner">
             <span class="cat-icon">${catIcon(cat.name)}</span>
             <span class="cat-name">${esc(cat.name)}</span>
-            <span class="cat-count" style="color:${c}">${cat.total_cases}筆</span>
-            <span class="cat-meta">${cat.subcategories.length}個情境 ${isOpen ? '▼' : '▶'}</span>
+            <span class="cat-count" style="color:${c}">${t().cases(cat.total_cases)}</span>
+            <span class="cat-meta">${t().scenarios(cat.subcategories.length)} ${isOpen ? '▼' : '▶'}</span>
           </div>
         </div>
         ${isOpen ? '<div class="sub-list">' + subsHtml + '</div>' : ''}
@@ -657,9 +802,9 @@ document.addEventListener('click', function(e) {
     document.body.appendChild(ta); ta.select(); document.execCommand('copy');
     document.body.removeChild(ta);
   });
-  btn.textContent = '✅ 已複製';
+  btn.textContent = t().copiedBtn;
   btn.classList.add('copied');
-  setTimeout(() => { btn.textContent = '📋 複製'; btn.classList.remove('copied'); }, 1500);
+  setTimeout(() => { btn.textContent = t().copyBtn; btn.classList.remove('copied'); }, 1500);
 });
 
 // ─── Initialise ───────────────────────────────────────────────────────────
@@ -687,9 +832,9 @@ async function fetchWithRetry(url, attempts) {
 async function init() {
   const loadingText = document.getElementById('loading-text');
   try {
-    loadingText.textContent = '正在從 Google Sheets 載入最新知識庫...';
+    loadingText.textContent = t().loadingSheet;
     const raw = await fetchWithRetry(SHEET_URL, 3);
-    loadingText.textContent = '解析資料中...';
+    loadingText.textContent = t().parsing;
     const rows = parseCSV(raw);
     KB = buildKBFromCSV(rows);
 
@@ -734,8 +879,7 @@ async function init() {
       });
     });
 
-    document.getElementById('subtitle').textContent =
-      allSubs.length + ' 個情境 · 中英日韓辨識 · 多語言回覆';
+    document.getElementById('subtitle').textContent = t().subtitle(allSubs.length);
 
     const overlay = document.getElementById('loading-overlay');
     overlay.classList.add('hidden');
@@ -746,10 +890,10 @@ async function init() {
   } catch (err) {
     loadingText.innerHTML = `
       <div class="error-box">
-        ❌ 無法載入知識庫資料<br>
+        ${t().errTitle}<br>
         <small style="color:#94a3b8;font-size:11px">${esc(err.message)}</small><br>
-        <small style="color:#64748b;font-size:11px">請確認網路連線正常，或 Google Sheets 已「發布到網路」</small><br>
-        <button class="retry-btn" onclick="init()">🔄 重新載入</button>
+        <small style="color:#64748b;font-size:11px">${t().errHint}</small><br>
+        <button class="retry-btn" onclick="init()">${t().retryBtn}</button>
       </div>`;
   }
 }
