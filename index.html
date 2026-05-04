@@ -131,11 +131,84 @@ const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRNrhyhY3Ibeg
 // ─── Language state ────────────────────────────────────────────────────────
 let currentLang = 'zh';
 
+const UI_TEXT = {
+  zh: {
+    title: 'SCM Disney Cruise 客服知識庫',
+    tab_classify: '🤖 訊息辨識', tab_browse: '📖 瀏覽知識庫',
+    lang_label: 'CS 回覆語言：',
+    hint: '貼上客人或 CS 的訊息（中文、英文、日文、韓文皆可），自動辨識問題類型並帶出 OP 作業 & CS 回覆',
+    placeholder: '貼上訊息內容...', btn_match: '⚡ 辨識並帶出回覆', btn_clear: '清除',
+    search_placeholder: '🔍 搜尋情境、關鍵字、回覆內容...',
+    no_match: '⚠️ 未匹配到已知情境，可能需要新增至知識庫。',
+    no_results: '找不到相關內容',
+    found: (n, s) => `找到 ${n} 個匹配，顯示前 ${s} 個`,
+    search_count: n => `搜尋結果：${n} 個情境`,
+    best: '最佳匹配', matched: '命中',
+    op_action: '🔴 OP 下一步作業', op_to_cs: '🟢 OP 告知給 CS', copy: '📋 複製',
+  },
+  en: {
+    title: 'SCM Disney Cruise CS Knowledge Base',
+    tab_classify: '🤖 Classify', tab_browse: '📖 Browse KB',
+    lang_label: 'CS Reply Language:',
+    hint: 'Paste customer or CS message (Chinese/English/Japanese/Korean) to auto-identify issue type and get OP steps & CS reply',
+    placeholder: 'Paste message here...', btn_match: '⚡ Identify & Get Reply', btn_clear: 'Clear',
+    search_placeholder: '🔍 Search scenarios, keywords, replies...',
+    no_match: '⚠️ No match found. May need to add to knowledge base.',
+    no_results: 'No results found',
+    found: (n, s) => `Found ${n} matches, showing top ${s}`,
+    search_count: n => `Search results: ${n} scenarios`,
+    best: 'Best Match', matched: 'Matched',
+    op_action: '🔴 OP Next Steps', op_to_cs: '🟢 OP → CS Note', copy: '📋 Copy',
+  },
+  ja: {
+    title: 'SCM Disney Cruise CSナレッジベース',
+    tab_classify: '🤖 メッセージ分類', tab_browse: '📖 ナレッジ閲覧',
+    lang_label: 'CS返信言語：',
+    hint: 'お客様またはCSのメッセージを貼り付けてください（中日英韓対応）、問題タイプを自動識別しOP作業とCS返信を表示します',
+    placeholder: 'メッセージを貼り付け...', btn_match: '⚡ 識別して返信取得', btn_clear: 'クリア',
+    search_placeholder: '🔍 シナリオ、キーワード、返信を検索...',
+    no_match: '⚠️ 一致するシナリオが見つかりません。ナレッジベースへの追加が必要かもしれません。',
+    no_results: '関連コンテンツが見つかりません',
+    found: (n, s) => `${n}件一致、上位${s}件を表示`,
+    search_count: n => `検索結果：${n}件`,
+    best: '最良一致', matched: '一致',
+    op_action: '🔴 OP 次のステップ', op_to_cs: '🟢 OP→CS 伝達事項', copy: '📋 コピー',
+  },
+  ko: {
+    title: 'SCM Disney Cruise CS 지식 베이스',
+    tab_classify: '🤖 메시지 분류', tab_browse: '📖 지식 베이스 탐색',
+    lang_label: 'CS 답변 언어：',
+    hint: '고객 또는 CS의 메시지를 붙여넣으세요（한국어·중국어·영어·일본어 모두 가능）, 문제 유형을 자동 식별하여 OP 작업 및 CS 답변을 제공합니다',
+    placeholder: '메시지 내용 붙여넣기...', btn_match: '⚡ 식별 및 답변 가져오기', btn_clear: '지우기',
+    search_placeholder: '🔍 상황, 키워드, 답변 내용 검색...',
+    no_match: '⚠️ 일치하는 상황을 찾을 수 없습니다. 지식 베이스에 추가가 필요할 수 있습니다.',
+    no_results: '관련 내용을 찾을 수 없습니다',
+    found: (n, s) => `${n}개 일치, 상위 ${s}개 표시`,
+    search_count: n => `검색 결과: ${n}개 상황`,
+    best: '최적 매칭', matched: '일치',
+    op_action: '🔴 OP 다음 단계', op_to_cs: '🟢 OP → CS 전달 사항', copy: '📋 복사',
+  }
+};
+
+function applyUILang(lang) {
+  const t = UI_TEXT[lang] || UI_TEXT.zh;
+  document.querySelector('h1').textContent = t.title;
+  document.getElementById('tab-classify').textContent = t.tab_classify;
+  document.getElementById('tab-browse').textContent = t.tab_browse;
+  document.querySelector('.lang-label').textContent = t.lang_label;
+  document.querySelector('.hint-text').textContent = t.hint;
+  document.getElementById('msg-input').placeholder = t.placeholder;
+  document.getElementById('match-btn').textContent = t.btn_match;
+  document.getElementById('clear-btn').textContent = t.btn_clear;
+  document.getElementById('search-box').placeholder = t.search_placeholder;
+}
+
 function setLang(lang) {
   currentLang = lang;
   ['zh','en','ja','ko'].forEach(l => {
     document.getElementById('lang-' + l).classList.toggle('active', l === lang);
   });
+  applyUILang(lang);
   // Re-render any visible cards
   if (document.getElementById('results-area').innerHTML) doMatch();
   if (document.getElementById('browse-pane').style.display !== 'none') renderBrowse();
@@ -603,9 +676,10 @@ function cardHTML(sub, ridx) {
   const c    = catColor(sub.catName);
   const icon = catIcon(sub.catName);
   const ref  = ridx !== undefined ? 'data-ridx="' + ridx + '"' : 'data-subid="' + sub.id + '"';
+  const ut = UI_TEXT[currentLang] || UI_TEXT.zh;
   const matchedStr  = (sub.matched && sub.matched.length > 0)
-    ? '<span class="matched-kws">命中: ' + esc(sub.matched.slice(0, 4).join(', ')) + '</span>' : '';
-  const bestBadge   = (ridx === 0) ? '<span class="badge-best">最佳匹配</span>' : '';
+    ? '<span class="matched-kws">' + ut.matched + ': ' + esc(sub.matched.slice(0, 4).join(', ')) + '</span>' : '';
+  const bestBadge   = (ridx === 0) ? '<span class="badge-best">' + ut.best + '</span>' : '';
   const notesHtml   = sub.notes ? '<div class="notes-box">⚠️ ' + esc(sub.notes) + '</div>' : '';
 
   const csReply = getCSReply(sub);
@@ -615,8 +689,8 @@ function cardHTML(sub, ridx) {
   const opToCs = sub.op_to_cs ? `
     <div class="card-section">
       <div class="section-row">
-        <span class="section-label" style="color:#10b981">🟢 OP 告知給 CS</span>
-        <button class="copy-btn" ${ref} data-field="op_to_cs">📋 複製</button>
+        <span class="section-label" style="color:#10b981">${ut.op_to_cs}</span>
+        <button class="copy-btn" ${ref} data-field="op_to_cs">${ut.copy}</button>
       </div>
       <div class="section-body" style="background:rgba(16,185,129,0.08);color:#6ee7b7">${esc(sub.op_to_cs).replace(/\n/g, '<br>')}</div>
     </div>` : '';
@@ -631,8 +705,8 @@ function cardHTML(sub, ridx) {
       </div>
       <div class="card-section">
         <div class="section-row">
-          <span class="section-label" style="color:#a855f7">🔴 OP 下一步作業</span>
-          <button class="copy-btn" ${ref} data-field="op_action">📋 複製</button>
+          <span class="section-label" style="color:#a855f7">${ut.op_action}</span>
+          <button class="copy-btn" ${ref} data-field="op_action">${ut.copy}</button>
         </div>
         <div class="section-body" style="background:rgba(139,92,246,0.08);color:#d8b4fe">${esc(sub.op_action).replace(/\n/g, '<br>')}</div>
       </div>
@@ -640,7 +714,7 @@ function cardHTML(sub, ridx) {
       <div class="card-section">
         <div class="section-row">
           <span class="section-label" style="color:#3b82f6">${csLabel}</span>
-          <button class="copy-btn" ${ref} data-field="cs_reply_current">📋 複製</button>
+          <button class="copy-btn" ${ref} data-field="cs_reply_current">${ut.copy}</button>
         </div>
         <div class="section-body" style="background:rgba(59,130,246,0.08);color:#93c5fd">${esc(csReply).replace(/\n/g, '<br>')}</div>
       </div>
@@ -690,12 +764,13 @@ function doMatch() {
   const area = document.getElementById('results-area');
   document.getElementById('clear-btn').style.display = 'inline-block';
   if (currentResults.length === 0) {
-    area.innerHTML = '<div class="no-results">⚠️ 未匹配到已知情境，可能需要新增至知識庫。</div>';
+    area.innerHTML = '<div class="no-results">' + (UI_TEXT[currentLang]||UI_TEXT.zh).no_match + '</div>';
     return;
   }
   const top = currentResults.slice(0, 3);
+  const t = UI_TEXT[currentLang] || UI_TEXT.zh;
   let html = currentResults.length > 1
-    ? '<div class="result-info">找到 ' + currentResults.length + ' 個匹配，顯示前 ' + top.length + ' 個</div>' : '';
+    ? '<div class="result-info">' + t.found(currentResults.length, top.length) + '</div>' : '';
   top.forEach((r, i) => { html += cardHTML(r, i); });
   area.innerHTML = html;
 }
@@ -714,10 +789,11 @@ function renderBrowse() {
       s.keywords.some(k => k.toLowerCase().includes(q))
     );
     if (filtered.length === 0) {
-      area.innerHTML = '<div class="no-results">找不到相關內容</div>';
+      area.innerHTML = '<div class="no-results">' + (UI_TEXT[currentLang]||UI_TEXT.zh).no_results + '</div>';
       return;
     }
-    let html = '<div class="search-count">搜尋結果：' + filtered.length + ' 個情境</div>';
+    const t2 = UI_TEXT[currentLang] || UI_TEXT.zh;
+    let html = '<div class="search-count">' + t2.search_count(filtered.length) + '</div>';
     filtered.forEach(s => {
       const c = catColor(s.catName);
       const isOpen = expandedSub === s.id;
