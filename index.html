@@ -98,7 +98,7 @@ textarea:focus{border-color:rgba(99,102,241,0.5)}
       <button class="tab-btn" id="tab-browse" onclick="switchTab('browse')">📖 瀏覽知識庫</button>
     </div>
     <div class="lang-bar">
-      <span class="lang-label" id="lang-label">CS 回覆語言：</span>
+      <span class="lang-label">CS 回覆語言：</span>
       <button class="lang-btn active" id="lang-zh" onclick="setLang('zh')">🇹🇼 中文</button>
       <button class="lang-btn" id="lang-en" onclick="setLang('en')">🇬🇧 English</button>
       <button class="lang-btn" id="lang-ja" onclick="setLang('ja')">🇯🇵 日本語</button>
@@ -108,7 +108,7 @@ textarea:focus{border-color:rgba(99,102,241,0.5)}
 
   <div id="classify-pane" class="pane">
     <div class="input-card">
-      <p class="hint-text" id="hint-text">貼上客人或 CS 的訊息（中文、英文、日文、韓文皆可），自動辨識問題類型並帶出 OP 作業 &amp; CS 回覆</p>
+      <p class="hint-text">貼上客人或 CS 的訊息（中文、英文、日文、韓文皆可），自動辨識問題類型並帶出 OP 作業 &amp; CS 回覆</p>
       <textarea id="msg-input" placeholder="貼上訊息內容..." oninput="onInputChange()" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();if(!document.getElementById('match-btn').disabled)doMatch();}"></textarea>
       <div class="btn-row">
         <button class="primary-btn" id="match-btn" disabled onclick="doMatch()">⚡ 辨識並帶出回覆</button>
@@ -131,156 +131,11 @@ const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRNrhyhY3Ibeg
 // ─── Language state ────────────────────────────────────────────────────────
 let currentLang = 'zh';
 
-// ─── UI translations ──────────────────────────────────────────────────────
-const UI_TEXT = {
-  zh: {
-    title: 'SCM Disney Cruise 客服知識庫',
-    tabClassify: '🤖 訊息辨識',
-    tabBrowse: '📖 瀏覽知識庫',
-    langLabel: 'CS 回覆語言：',
-    hintText: '貼上客人或 CS 的訊息（中文、英文、日文、韓文皆可），自動辨識問題類型並帶出 OP 作業 & CS 回覆',
-    placeholder: '貼上訊息內容...',
-    matchBtn: '⚡ 辨識並帶出回覆',
-    clearBtn: '清除',
-    searchPlaceholder: '🔍 搜尋情境、關鍵字、回覆內容...',
-    loading: '正在載入知識庫...',
-    loadingSheet: '正在從 Google Sheets 載入最新知識庫...',
-    parsing: '解析資料中...',
-    subtitle: n => `${n} 個情境 · 中英日韓辨識 · 多語言回覆`,
-    errTitle: '❌ 無法載入知識庫資料',
-    errHint: '請確認網路連線正常，或 Google Sheets 已「發布到網路」',
-    retryBtn: '🔄 重新載入',
-    noResults: '⚠️ 未匹配到已知情境，可能需要新增至知識庫。',
-    resultInfo: (total, shown) => `找到 ${total} 個匹配，顯示前 ${shown} 個`,
-    browseNoResults: '找不到相關內容',
-    searchCount: n => `搜尋結果：${n} 個情境`,
-    bestMatch: '最佳匹配',
-    matched: '命中',
-    opAction: '🔴 OP 下一步作業',
-    opToCs: '🟢 OP 告知給 CS',
-    copyBtn: '📋 複製',
-    copiedBtn: '✅ 已複製',
-    cases: n => `${n}筆`,
-    scenarios: n => `${n}個情境`,
-    csReplyLabel: '🔵 CS 對客回覆（中文）',
-  },
-  en: {
-    title: 'SCM Disney Cruise CS Knowledge Base',
-    tabClassify: '🤖 Classify',
-    tabBrowse: '📖 Browse KB',
-    langLabel: 'CS Reply Language: ',
-    hintText: 'Paste a customer or CS message (Chinese, English, Japanese, or Korean). Auto-detects the issue type and retrieves OP tasks & CS reply.',
-    placeholder: 'Paste message here...',
-    matchBtn: '⚡ Identify & Get Reply',
-    clearBtn: 'Clear',
-    searchPlaceholder: '🔍 Search scenarios, keywords, reply content...',
-    loading: 'Loading knowledge base...',
-    loadingSheet: 'Loading latest knowledge base from Google Sheets...',
-    parsing: 'Parsing data...',
-    subtitle: n => `${n} scenarios · ZH/EN/JA/KO detection · Multilingual reply`,
-    errTitle: '❌ Failed to load knowledge base',
-    errHint: 'Please check your network connection or ensure the Google Sheet is published to the web.',
-    retryBtn: '🔄 Retry',
-    noResults: '⚠️ No matching scenario found. May need to be added to the knowledge base.',
-    resultInfo: (total, shown) => `Found ${total} match(es), showing top ${shown}`,
-    browseNoResults: 'No results found',
-    searchCount: n => `Search results: ${n} scenario(s)`,
-    bestMatch: 'Best Match',
-    matched: 'Matched',
-    opAction: '🔴 OP Next Steps',
-    opToCs: '🟢 OP Note to CS',
-    copyBtn: '📋 Copy',
-    copiedBtn: '✅ Copied',
-    cases: n => `${n} case(s)`,
-    scenarios: n => `${n} scenario(s)`,
-    csReplyLabel: '🔵 CS Reply (English)',
-  },
-  ja: {
-    title: 'SCM Disney Cruise CS ナレッジベース',
-    tabClassify: '🤖 メッセージ分類',
-    tabBrowse: '📖 ナレッジ閲覧',
-    langLabel: 'CS返信言語：',
-    hintText: 'お客様またはCSのメッセージを貼り付けてください（中国語・英語・日本語・韓国語対応）。問題タイプを自動識別し、OP作業とCS返信を表示します。',
-    placeholder: 'メッセージを貼り付けてください...',
-    matchBtn: '⚡ 識別して返信を取得',
-    clearBtn: 'クリア',
-    searchPlaceholder: '🔍 シナリオ、キーワード、返信内容を検索...',
-    loading: 'ナレッジベースを読み込み中...',
-    loadingSheet: 'Google Sheetsから最新ナレッジベースを読み込み中...',
-    parsing: 'データを解析中...',
-    subtitle: n => `${n}件のシナリオ · 中英日韓識別 · 多言語対応`,
-    errTitle: '❌ ナレッジベースの読み込みに失敗しました',
-    errHint: 'ネットワーク接続を確認するか、Google Sheetsがウェブに公開されているか確認してください。',
-    retryBtn: '🔄 再試行',
-    noResults: '⚠️ 該当するシナリオが見つかりません。ナレッジベースへの追加が必要かもしれません。',
-    resultInfo: (total, shown) => `${total}件のマッチが見つかりました。上位${shown}件を表示中`,
-    browseNoResults: '関連するコンテンツが見つかりません',
-    searchCount: n => `検索結果：${n}件のシナリオ`,
-    bestMatch: 'ベストマッチ',
-    matched: 'マッチ',
-    opAction: '🔴 OP 次のステップ',
-    opToCs: '🟢 OPからCSへの連絡事項',
-    copyBtn: '📋 コピー',
-    copiedBtn: '✅ コピー済み',
-    cases: n => `${n}件`,
-    scenarios: n => `${n}シナリオ`,
-    csReplyLabel: '🔵 CS返信（日本語）',
-  },
-  ko: {
-    title: 'SCM Disney Cruise CS 지식베이스',
-    tabClassify: '🤖 메시지 분류',
-    tabBrowse: '📖 지식베이스 탐색',
-    langLabel: 'CS 답변 언어：',
-    hintText: '고객 또는 CS의 메시지를 붙여넣으세요（중국어, 영어, 일본어, 한국어 모두 가능). 문제 유형을 자동 식별하여 OP 작업 및 CS 답변을 제공합니다.',
-    placeholder: '메시지를 붙여넣으세요...',
-    matchBtn: '⚡ 식별 및 답변 가져오기',
-    clearBtn: '지우기',
-    searchPlaceholder: '🔍 시나리오, 키워드, 답변 내용 검색...',
-    loading: '지식베이스를 불러오는 중...',
-    loadingSheet: 'Google Sheets에서 최신 지식베이스를 불러오는 중...',
-    parsing: '데이터 파싱 중...',
-    subtitle: n => `${n}개 시나리오 · 중영일한 인식 · 다국어 답변`,
-    errTitle: '❌ 지식베이스를 불러올 수 없습니다',
-    errHint: '네트워크 연결을 확인하거나 Google Sheets가 웹에 게시되었는지 확인해 주세요.',
-    retryBtn: '🔄 다시 시도',
-    noResults: '⚠️ 일치하는 시나리오를 찾을 수 없습니다. 지식베이스에 추가가 필요할 수 있습니다.',
-    resultInfo: (total, shown) => `${total}개 일치, 상위 ${shown}개 표시`,
-    browseNoResults: '관련 내용을 찾을 수 없습니다',
-    searchCount: n => `검색 결과: ${n}개 시나리오`,
-    bestMatch: '최적 매칭',
-    matched: '일치',
-    opAction: '🔴 OP 다음 단계',
-    opToCs: '🟢 OP → CS 전달 사항',
-    copyBtn: '📋 복사',
-    copiedBtn: '✅ 복사됨',
-    cases: n => `${n}건`,
-    scenarios: n => `${n}개 시나리오`,
-    csReplyLabel: '🔵 CS 답변（한국어）',
-  }
-};
-
-function t() { return UI_TEXT[currentLang] || UI_TEXT.zh; }
-
-function applyUILang(lang) {
-  const tx = UI_TEXT[lang] || UI_TEXT.zh;
-  document.querySelector('h1').textContent = tx.title;
-  document.title = tx.title;
-  document.getElementById('tab-classify').textContent = tx.tabClassify;
-  document.getElementById('tab-browse').textContent   = tx.tabBrowse;
-  document.getElementById('lang-label').textContent   = tx.langLabel;
-  document.getElementById('hint-text').textContent    = tx.hintText;
-  document.getElementById('msg-input').placeholder    = tx.placeholder;
-  document.getElementById('match-btn').textContent    = tx.matchBtn;
-  document.getElementById('clear-btn').textContent = tx.clearBtn;
-  document.getElementById('search-box').placeholder   = tx.searchPlaceholder;
-}
-
 function setLang(lang) {
   currentLang = lang;
   ['zh','en','ja','ko'].forEach(l => {
     document.getElementById('lang-' + l).classList.toggle('active', l === lang);
   });
-  applyUILang(lang);
   // Re-render any visible cards
   if (document.getElementById('results-area').innerHTML) doMatch();
   if (document.getElementById('browse-pane').style.display !== 'none') renderBrowse();
@@ -458,6 +313,124 @@ ko: {
 }
 };
 
+// ─── Multi-language keyword aliases (KO / JA) ─────────────────────────────
+const KEYWORD_ALIASES = {
+  ko: {
+    "無法登入DCL APP":["로그인 불가","로그인 안됨","앱 로그인","DCL 앱","디즈니 크루즈 앱","앱 접속 불가","로그인이 안","로그인 오류","앱 못 들어감"],
+    "APP/官網找不到設定":["설정 없음","찾을 수 없음","앱에서 안 보임","정보 없음","설정 찾기","조회 불가","앱에 없음","예약 안 보임"],
+    "超過30天仍找不到設定":["30일","한 달","30일 넘었","아직 안 보임","아직 없음","1달 지났"],
+    "登入顯示尚未付清款項":["온라인 체크인","체크인 불가","미납","결제 안 됨","잔금 미납","아직 결제","온라인 체크인 안됨","결제 확인","check-in 안됨"],
+    "APP上旅客資料顯示錯誤":["앱 정보 오류","앱 정보 틀림","앱에 잘못 나옴","앱 표시 오류","앱 데이터 오류","앱 정보 다름"],
+    "APP顯示航空旅行稅（Air Travel Taxes）":["항공세","추가 요금","세금 표시","항공 여행세","에어 텍스","세금 추가됨"],
+    "APP顯示旅客人數不符":["인원 수 불일치","명 수 다름","인원 틀림","승객 수 오류","2명만","3명만","인원 다름"],
+    "無法進行線上Check-in":["체크인 불가","온라인 체크인 안됨","체크인 안 됨","온라인 등록 불가","check in 불가","체크인 못함"],
+    "APP內預訂/訂餐功能問題":["앱 예약","앱 식사 예약","앱에서 예약","활동 예약","다이닝 예약","레스토랑 예약","앱 예약 오류","앱 예약 안됨"],
+    "線上報到顯示未付款":["미결제","결제 미완료","잔액 미납","미납 표시","체크인 결제","결제 안됨 체크인"],
+    "報到照片/護照上傳問題":["사진 업로드","사진 업로드 안됨","여권 사진","사진 등록","사진 오류","업로드 실패","여권 업로드"],
+    "催一般處理進度":["처리 진행","진행 상황","업데이트","언제 처리","확인 요청","처리 중","어떻게 됐나요","결과 확인","아직도 안됨"],
+    "催憑證/確認信":["바우처","확인서","예약 확인","바우처 보내","확인 이메일","티켓 발송","바우처 언제"],
+    "催資料修改進度":["변경 진행","수정 진행","이름 변경 확인","변경 상황","수정 언제","변경 완료됐나요"],
+    "催問50%退款進度":["50% 환불","오십 퍼센트 환불","50% 진행","환불 언제","50프로 환불","50% 됐나요"],
+    "提供新單設定申請折抵":["새 예약 50%","새 주문 50%","재예약 할인","새로 예약 50%","새 예약 할인"],
+    "詢問是否符合折抵資格":["50% 자격","50% 해당","50% 적용 가능","오십퍼 해당","50% 가능","50프로 자격"],
+    "已上表/提交退款申請":["신청서 제출","표 작성","양식 제출","구글 시트","50% 신청","제출 완료"],
+    "退款金額有疑問":["환불 금액","환불 계산","환불 차액","금액 다름","환불 얼마","환불액 다름"],
+    "其他50%折抵問題":["50%","50 퍼센트","절반 환불","50프로","오십 퍼센트","반값 환불"],
+    "修改國籍":["국적 변경","국적 수정","국적 바꾸기","국적 오류","국적이 틀림"],
+    "其他資料修改（姓名/出生日期/護照/Email/性別）":["이름 변경","이름 수정","생년월일 변경","생일 수정","여권 변경","여권 수정","이메일 변경","성별 변경","정보 수정","성명 변경","이름 오류","여권번호 수정","개인정보 변경"],
+    "詢問房號編碼":["방 번호","방 몇 호","객실 번호","룸 번호","어느 방","방 배정","제 방은"],
+    "要求連通房/相鄰房":["연결 객실","커넥팅 룸","연결 방","옆방","인접 객실","서로 연결된 방"],
+    "指定房號位置偏好":["방 위치","선호 객실","특정 방","가운데 방","높은 층","앞쪽 방","뒤쪽 방","선호하는 방"],
+    "換房/換主題房":["방 변경","방 바꾸기","테마 방","마블 방","스파이더맨 방","스타워즈 방","방 교체","방 바꿔"],
+    "其他房號問題":["객실","방 문의","갑판","층수","선실","룸 타입","방 사진","선내 방"],
+    "一般取消/退款申請":["취소","환불","캔슬","예약 취소","취소하고 싶어","환불 요청","취소 신청","취소 원해"],
+    "催退款進度":["환불 언제","환불 진행","환불 상태","환불 확인","환불 처리","환불 기다리","환불 됐나요"],
+    "退款金額疑問/要明細":["환불 금액 확인","환불 내역","환불 명세","환불 얼마","금액 확인","환불 상세"],
+    "部分退款申請":["일부 취소","한 명 취소","부분 환불","인원 줄이기","1명만 취소","한 명만 환불"],
+    "特殊原因取消（家庭/健康）":["아프다","건강 문제","사망","입원","수술","가족 사정","긴급 취소","병원 입원"],
+    "取消後重新訂購":["재예약","다시 예약","새로 예약 후 취소","취소 후 재예약","새 예약"],
+    "重複預訂/訂錯取消":["중복 예약","이중 예약","실수 예약","잘못 예약","두 번 예약","똑같이 예약"],
+    "詢問如何預訂接駁":["셔틀 예약 방법","셔틀 어떻게","픽업 예약","교통편 예약","셔틀 신청","셔틀 어디서"],
+    "確認是否包含接駁服務":["셔틀 포함","픽업 포함","교통 포함","셔틀 있나요","픽업 있나요","셔틀 포함인가요"],
+    "接駁時間查詢/更改":["셔틀 시간","픽업 시간","셔틀 언제","시간 변경","픽업 변경","셔틀 몇 시"],
+    "兌換碼問題（過期/無法使用）":["코드 만료","코드 사용 불가","코드 오류","환전 코드","기간 만료","코드 안됨"],
+    "其他接駁問題":["셔틀","픽업","교통편","픽업 서비스","공항 셔틀","호텔 셔틀","교통수단","셔틀 버스"],
+    "新增旅客（詢問可行性/費用）":["승객 추가","인원 추가","한 명 더","아이 추가","어른 추가","추가 요금","인원 늘리기"],
+    "升等艙房":["업그레이드","객실 업그레이드","컨시어지","상위 객실","승급","방 업그레이드"],
+    "減少人數":["인원 줄이기","한 명 빼기","취소 한 명","인원 감소","한 명 줄이기"],
+    "攜帶酒精上船":["술 반입","와인 반입","맥주 반입","음주 정책","주류 가능","술 가져가기"],
+    "攜帶食物/飲料上船":["음식 반입","스낵 반입","음식 가져가기","식품 정책","음식물 반입","식품 반입"],
+    "電器攜帶限制":["전자기기","헤어드라이어","전기포트","멀티탭","다리미","전기밥솥","전자제품 반입","전기제품"],
+    "船上吸煙政策":["흡연","담배","전자담배","베이핑","흡연 구역","흡연 가능","흡연 정책"],
+    "船上消費方式":["현금","신용카드","결제 방법","선내 결제","카드 사용","외화","달러","선내 쇼핑"],
+    "特殊膳食/食物過敏申請":["알레르기","음식 알레르기","채식","비건","글루텐 프리","특별식","할랄","채식주의"],
+    "特殊場合安排（生日/蜜月/紀念日）":["생일","허니문","기념일","프로포즈","특별 행사","생일 이벤트","신혼여행","웨딩"],
+    "帶嬰兒/幼兒同行":["아기","영아","유아","유모차","기저귀","아기 침대","어린 아이","베이비","갓난아기"],
+    "自行前往港口（捷運/計程車）":["MRT","지하철","택시","항구까지","크루즈 터미널","마리나 사우스 피어","혼자 가기","셀프 이동"],
+    "用兌換碼兌換飯店":["호텔 코드","호텔 교환","코드로 호텔","호텔 예약 코드","코드 호텔"],
+    "兩/多筆同行單想綁定一起":["예약 연결","같이 예약","예약 묶기","두 예약","여러 예약 연결","예약 통합"],
+    "連通房需求":["커넥팅 룸","연결 객실","연결 방","연결된 방"],
+    "合作飯店旅客詢問優先登船接駁":["우선 탑승","우선 승선","파트너 호텔","제휴 호텔","셔틀 우선","먼저 탑승","우선권","선탑승","샹그릴라","마리나베이샌즈","래플스","우선 탑승 혜택"]
+  },
+  ja: {
+    "無法登入DCL APP":["ログインできない","ログイン不可","アプリにログインできない","DCLアプリ","ログインエラー","アプリにアクセスできない","ログインが","アプリ ログイン"],
+    "APP/官網找不到設定":["設定が見つからない","見つからない","表示されない","アプリで確認できない","予約が見つからない","予約が表示されない"],
+    "超過30天仍找不到設定":["30日","1ヶ月","30日経過","まだ見つからない","1か月経った","1ヶ月以上"],
+    "登入顯示尚未付清款項":["オンラインチェックイン","未払い","支払い未完了","残金未払い","チェックインできない","未決済","支払いが完了していない"],
+    "APP上旅客資料顯示錯誤":["アプリの情報が間違っている","アプリ表示エラー","情報が違う","アプリで誤った情報","アプリ 間違い"],
+    "APP顯示航空旅行稅（Air Travel Taxes）":["航空税","追加料金","航空旅行税","エアトラベルタックス","税金が追加"],
+    "APP顯示旅客人數不符":["人数が合わない","人数が違う","2人だけ表示","乗客数エラー","人数 エラー"],
+    "無法進行線上Check-in":["チェックインできない","オンラインチェックイン不可","チェックイン不可","チェックインエラー","オンライン チェックイン"],
+    "APP內預訂/訂餐功能問題":["アプリで予約","レストラン予約","ダイニング予約","アクティビティ予約","アプリ予約エラー","食事予約"],
+    "線上報到顯示未付款":["未払い表示","残高未払い","支払い未完了","チェックイン 支払い","残金未払い"],
+    "報到照片/護照上傳問題":["写真アップロード","パスポート写真","写真登録","アップロードできない","写真エラー","パスポート アップロード"],
+    "催一般處理進度":["進捗確認","状況確認","いつになる","アップデート","処理中","どうなった","まだですか","いつ処理"],
+    "催憑證/確認信":["バウチャー","確認メール","予約確認","チケット","バウチャー送付","バウチャーいつ"],
+    "催資料修改進度":["変更進捗","修正状況","名前変更確認","いつ変更される","変更完了しましたか"],
+    "催問50%退款進度":["50%返金","50%はいつ","返金状況","50%進捗","50パーセント 返金"],
+    "提供新單設定申請折抵":["新予約 50%","新しい予約 50%","再予約 割引","新予約割引"],
+    "詢問是否符合折抵資格":["50%対象","50%資格","50%適用","50%条件","50パーセント 対象"],
+    "已上表/提交退款申請":["申請済み","フォーム提出","シート記入","50%申請","提出しました"],
+    "退款金額有疑問":["返金額","返金計算","返金差額","金額が違う","いくら返金","返金 金額"],
+    "其他50%折抵問題":["50%","50パーセント","半額返金","50プロ","50% 折引"],
+    "修改國籍":["国籍変更","国籍修正","ナショナリティ変更","国籍 エラー"],
+    "其他資料修改（姓名/出生日期/護照/Email/性別）":["名前変更","名前修正","生年月日変更","誕生日修正","パスポート変更","パスポート修正","メール変更","性別変更","情報修正","氏名変更","名前間違い","パスポート番号修正","個人情報変更"],
+    "詢問房號編碼":["部屋番号","部屋は何号室","キャビン番号","どの部屋","部屋 番号"],
+    "要求連通房/相鄰房":["コネクティングルーム","隣の部屋","繋がった部屋","隣接客室","コネクティング ルーム"],
+    "指定房號位置偏好":["部屋の場所","ミッドシップ","高い階","前方","後方","部屋の希望","部屋 希望"],
+    "換房/換主題房":["部屋変更","テーマルーム","マーベルルーム","スパイダーマン","スターウォーズ","部屋交換","部屋 変更"],
+    "其他房號問題":["客室","部屋","デッキ","階","キャビン","ルームタイプ","船室","船内 部屋"],
+    "一般取消/退款申請":["キャンセル","返金","取消","予約キャンセル","キャンセルしたい","返金申請","キャンセル 申請"],
+    "催退款進度":["返金いつ","返金状況","返金確認","返金処理","返金待ち","返金はいつ"],
+    "退款金額疑問/要明細":["返金額確認","返金明細","返金詳細","いくら返金","金額確認","返金 詳細"],
+    "部分退款申請":["一部キャンセル","1人キャンセル","部分返金","人数を減らす","一人だけキャンセル"],
+    "特殊原因取消（家庭/健康）":["病気","健康問題","入院","手術","家族の事情","緊急キャンセル","病院","体調不良"],
+    "取消後重新訂購":["再予約","新しく予約","キャンセル後再予約","再度予約"],
+    "重複預訂/訂錯取消":["重複予約","二重予約","間違い予約","2回予約","ダブルブッキング"],
+    "詢問如何預訂接駁":["シャトル予約方法","シャトルの予約","ピックアップ予約","送迎予約","シャトルはどうやって"],
+    "確認是否包含接駁服務":["シャトル含まれる","ピックアップ含む","送迎含む","シャトルはある","シャトル 含む"],
+    "接駁時間查詢/更改":["シャトル時間","ピックアップ時間","時間変更","シャトルいつ","何時のシャトル"],
+    "兌換碼問題（過期/無法使用）":["コード期限切れ","コード使えない","コードエラー","引換コード","コード 無効"],
+    "其他接駁問題":["シャトル","ピックアップ","送迎","交通手段","空港シャトル","ホテルシャトル","シャトルバス"],
+    "新增旅客（詢問可行性/費用）":["乗客追加","人数追加","もう1人追加","子ども追加","追加料金","人数 増やす"],
+    "升等艙房":["アップグレード","客室アップグレード","コンシェルジュ","上位客室","部屋 アップグレード"],
+    "減少人數":["人数を減らす","1人キャンセル","人数減少","1人 減らす"],
+    "攜帶酒精上船":["酒の持ち込み","ワイン持ち込み","ビール持ち込み","飲酒ポリシー","お酒 持ち込み"],
+    "攜帶食物/飲料上船":["食べ物持ち込み","スナック持ち込み","食品ポリシー","食品 持ち込み","食べ物 持込"],
+    "電器攜帶限制":["電化製品","ヘアドライヤー","電気ポット","延長コード","アイロン","炊飯器","家電 持ち込み"],
+    "船上吸煙政策":["喫煙","タバコ","電子タバコ","ベイピング","喫煙エリア","喫煙 ポリシー"],
+    "船上消費方式":["現金","クレジットカード","支払い方法","船内決済","カード使用","外貨","船内 支払い"],
+    "特殊膳食/食物過敏申請":["アレルギー","食物アレルギー","ベジタリアン","ビーガン","グルテンフリー","特別食","ハラール","食事制限"],
+    "特殊場合安排（生日/蜜月/紀念日）":["誕生日","ハネムーン","記念日","プロポーズ","特別イベント","誕生日イベント","新婚旅行"],
+    "帶嬰兒/幼兒同行":["赤ちゃん","乳児","幼児","ベビーカー","おむつ","ベビーベッド","赤ちゃん連れ","ベビー","乳幼児"],
+    "自行前往港口（捷運/計程車）":["MRT","地下鉄","タクシー","港まで","クルーズターミナル","マリーナサウスピア","自分で行く","セルフ移動"],
+    "用兌換碼兌換飯店":["ホテルコード","ホテル引換","コードでホテル","ホテル予約コード","コード ホテル"],
+    "兩/多筆同行單想綁定一起":["予約を連結","一緒に予約","予約を束ねる","2つの予約","複数予約の連結","予約 まとめる"],
+    "連通房需求":["コネクティングルーム","隣接客室","繋がった部屋","コネクティング"],
+    "合作飯店旅客詢問優先登船接駁":["優先乗船","優先搭乗","パートナーホテル","提携ホテル","先に乗船","シャトル優先","乗船優先","シャングリラ","マリーナベイサンズ","ラッフルズ","優先 乗船","先に乗れる"]
+  }
+};
+
 function getCSReply(sub) {
   if (currentLang === 'zh') return sub.cs_reply;
   // Check if sheet has translation columns
@@ -465,211 +438,6 @@ function getCSReply(sub) {
   if (fromSheet) return fromSheet;
   // Fall back to embedded translations
   return (TRANS[currentLang] && TRANS[currentLang][sub.name]) || sub.cs_reply;
-}
-
-// ─── Category & subcategory name translations ─────────────────────────────
-const CAT_TRANS = {
-  en: {
-    "APP/登入問題":"APP/Login Issues","APP/資料問題":"APP/Data Issues",
-    "APP/線上報到":"APP/Online Check-in","催促/進度查詢":"Follow-up/Status Check",
-    "50%折抵":"50% Credit","旅客資料修改":"Passenger Data Edit",
-    "房號/艙房":"Cabin/Room","退款+取消":"Refund+Cancellation",
-    "接駁/交通":"Shuttle/Transport","加人/升等":"Add Pax/Upgrade"
-  },
-  ja: {
-    "APP/登入問題":"APP/ログイン問題","APP/資料問題":"APP/データ問題",
-    "APP/線上報到":"APP/オンラインチェックイン","催促/進度查詢":"督促/進捗確認",
-    "50%折抵":"50%クレジット","旅客資料修改":"旅客情報修正",
-    "房號/艙房":"客室番号/客室","退款+取消":"返金+キャンセル",
-    "接駁/交通":"シャトル/交通","加人/升等":"旅客追加/アップグレード"
-  },
-  ko: {
-    "APP/登入問題":"APP/로그인 문제","APP/資料問題":"APP/데이터 문제",
-    "APP/線上報到":"APP/온라인 체크인","催促/進度查詢":"독촉/진행 상황 조회",
-    "50%折抵":"50% 크레딧","旅客資料修改":"탑승객 정보 수정",
-    "房號/艙房":"객실 번호/객실","退款+取消":"환불+취소",
-    "接駁/交通":"셔틀/교통","加人/升等":"탑승객 추가/업그레이드"
-  }
-};
-
-const SUB_TRANS = {
-  en: {
-    "無法登入DCL APP":"Cannot Log In to DCL App",
-    "APP/官網找不到設定":"Booking Not Found in App/Website",
-    "超過30天仍找不到設定":"Still Not Found After 30 Days",
-    "登入顯示尚未付清款項":"Login Shows Unpaid Balance",
-    "APP上旅客資料顯示錯誤":"Incorrect Passenger Info in App",
-    "APP顯示航空旅行稅（Air Travel Taxes）":"App Shows Air Travel Taxes",
-    "APP顯示旅客人數不符":"App Shows Wrong Passenger Count",
-    "無法進行線上Check-in":"Unable to Complete Online Check-in",
-    "APP內預訂/訂餐功能問題":"App Booking/Dining Reservation Issue",
-    "線上報到顯示未付款":"Online Check-in Shows Unpaid",
-    "報到照片/護照上傳問題":"Check-in Photo/Passport Upload Issue",
-    "催一般處理進度":"Follow Up on General Processing",
-    "催憑證/確認信":"Follow Up on Voucher/Confirmation Email",
-    "催資料修改進度":"Follow Up on Data Modification",
-    "催問50%退款進度":"Follow Up on 50% Refund",
-    "提供新單設定申請折抵":"Submit New Order for 50% Credit",
-    "詢問是否符合折抵資格":"Inquire About Credit Eligibility",
-    "已上表/提交退款申請":"Refund Application Submitted",
-    "退款金額有疑問":"Refund Amount Dispute",
-    "其他50%折抵問題":"Other 50% Credit Issues",
-    "修改國籍":"Modify Nationality",
-    "其他資料修改（姓名/出生日期/護照/Email/性別）":"Other Data Modification (Name/DOB/Passport/Email/Gender)",
-    "詢問房號編碼":"Cabin Number Code Inquiry",
-    "要求連通房/相鄰房":"Request Connecting/Adjacent Cabin",
-    "指定房號位置偏好":"Specify Cabin Location Preference",
-    "換房/換主題房":"Change Cabin/Theme Cabin",
-    "其他房號問題":"Other Cabin Issues",
-    "一般取消/退款申請":"General Cancellation/Refund Request",
-    "催退款進度":"Follow Up on Refund",
-    "退款金額疑問/要明細":"Refund Amount Inquiry/Request Breakdown",
-    "部分退款申請":"Partial Refund Request",
-    "特殊原因取消（家庭/健康）":"Cancellation for Special Reasons (Family/Health)",
-    "取消後重新訂購":"Rebook After Cancellation",
-    "重複預訂/訂錯取消":"Cancel Duplicate/Wrong Booking",
-    "詢問如何預訂接駁":"How to Book Shuttle Service",
-    "確認是否包含接駁服務":"Confirm if Shuttle is Included",
-    "接駁時間查詢/更改":"Shuttle Time Inquiry/Change",
-    "兌換碼問題（過期/無法使用）":"Redemption Code Issue (Expired/Invalid)",
-    "其他接駁問題":"Other Shuttle Issues",
-    "新增旅客（詢問可行性/費用）":"Add Passenger (Feasibility/Cost Inquiry)",
-    "升等艙房":"Cabin Upgrade",
-    "減少人數":"Reduce Passenger Count",
-    "攜帶酒精上船":"Bringing Alcohol Onboard",
-    "攜帶食物/飲料上船":"Bringing Food/Drinks Onboard",
-    "電器攜帶限制":"Electronics Restrictions",
-    "船上吸煙政策":"Onboard Smoking Policy",
-    "船上消費方式":"Onboard Payment Methods",
-    "特殊膳食/食物過敏申請":"Special Diet/Food Allergy Request",
-    "特殊場合安排（生日/蜜月/紀念日）":"Special Occasion Arrangement (Birthday/Honeymoon/Anniversary)",
-    "帶嬰兒/幼兒同行":"Traveling with Infants/Toddlers",
-    "自行前往港口（捷運/計程車）":"Self-Transfer to Port (MRT/Taxi)",
-    "兩/多筆同行單想綁定一起":"Link Multiple Bookings",
-    "連通房需求":"Connecting Room Request",
-    "合作飯店旅客詢問優先登船接駁":"Partner Hotel Guest Priority Boarding Shuttle"
-  },
-  ja: {
-    "無法登入DCL APP":"DCL アプリにログインできない",
-    "APP/官網找不到設定":"APP/公式サイトで設定が見つからない",
-    "超過30天仍找不到設定":"30日経過しても設定が見つからない",
-    "登入顯示尚未付清款項":"ログイン時に未払い表示",
-    "APP上旅客資料顯示錯誤":"APPの旅客情報が誤って表示される",
-    "APP顯示航空旅行稅（Air Travel Taxes）":"APPに航空旅行税が表示される",
-    "APP顯示旅客人數不符":"APPに旅客人数の不一致表示",
-    "無法進行線上Check-in":"オンラインチェックインができない",
-    "APP內預訂/訂餐功能問題":"APP内の予約/食事予約機能の問題",
-    "線上報到顯示未付款":"オンラインチェックインに未払い表示",
-    "報到照片/護照上傳問題":"チェックイン写真/パスポートのアップロード問題",
-    "催一般處理進度":"一般処理の進捗確認",
-    "催憑證/確認信":"バウチャー/確認書の催促",
-    "催資料修改進度":"データ修正の進捗確認",
-    "催問50%退款進度":"50%返金の進捗確認",
-    "提供新單設定申請折抵":"新予約提供と50%クレジット申請",
-    "詢問是否符合折抵資格":"クレジット適用資格の問い合わせ",
-    "已上表/提交退款申請":"返金申請書提出済み",
-    "退款金額有疑問":"返金金額の疑問",
-    "其他50%折抵問題":"その他の50%クレジット問題",
-    "修改國籍":"国籍の修正",
-    "其他資料修改（姓名/出生日期/護照/Email/性別）":"その他の情報修正（氏名/生年月日/パスポート/メール/性別）",
-    "詢問房號編碼":"客室番号コードの問い合わせ",
-    "要求連通房/相鄰房":"コネクティングルーム/隣接客室のリクエスト",
-    "指定房號位置偏好":"客室位置の希望指定",
-    "換房/換主題房":"客室変更/テーマ客室変更",
-    "其他房號問題":"その他の客室問題",
-    "一般取消/退款申請":"一般的なキャンセル/返金申請",
-    "催退款進度":"返金進捗の確認",
-    "退款金額疑問/要明細":"返金金額の問い合わせ/明細リクエスト",
-    "部分退款申請":"一部返金申請",
-    "特殊原因取消（家庭/健康）":"特別な理由によるキャンセル（家庭/健康）",
-    "取消後重新訂購":"キャンセル後の再予約",
-    "重複預訂/訂錯取消":"重複/誤った予約のキャンセル",
-    "詢問如何預訂接駁":"シャトル予約方法の問い合わせ",
-    "確認是否包含接駁服務":"シャトルサービス包含確認",
-    "接駁時間查詢/更改":"シャトル時間の照会/変更",
-    "兌換碼問題（過期/無法使用）":"引換コードの問題（期限切れ/使用不可）",
-    "其他接駁問題":"その他のシャトル問題",
-    "新增旅客（詢問可行性/費用）":"旅客追加（可能性/費用の問い合わせ）",
-    "升等艙房":"客室アップグレード",
-    "減少人數":"旅客数削減",
-    "攜帶酒精上船":"酒類の持ち込み",
-    "攜帶食物/飲料上船":"食べ物/飲み物の持ち込み",
-    "電器攜帶限制":"電化製品の持ち込み制限",
-    "船上吸煙政策":"船内禁煙ポリシー",
-    "船上消費方式":"船内決済方法",
-    "特殊膳食/食物過敏申請":"特別食/食物アレルギーリクエスト",
-    "特殊場合安排（生日/蜜月/紀念日）":"特別な場合の手配（誕生日/ハネムーン/記念日）",
-    "帶嬰兒/幼兒同行":"乳幼児連れ旅行",
-    "自行前往港口（捷運/計程車）":"自力での港への移動（MRT/タクシー）",
-    "兩/多筆同行單想綁定一起":"複数予約のリンク",
-    "連通房需求":"コネクティングルームリクエスト",
-    "合作飯店旅客詢問優先登船接駁":"提携ホテル宿泊客の優先乗船シャトル問い合わせ"
-  },
-  ko: {
-    "無法登入DCL APP":"DCL 앱 로그인 불가",
-    "APP/官網找不到設定":"APP/공식 사이트에서 설정 없음",
-    "超過30天仍找不到設定":"30일 경과 후에도 설정 없음",
-    "登入顯示尚未付清款項":"로그인 시 미결제 표시",
-    "APP上旅客資料顯示錯誤":"APP 탑승객 정보 오류 표시",
-    "APP顯示航空旅行稅（Air Travel Taxes）":"APP에 항공 여행세 표시",
-    "APP顯示旅客人數不符":"APP 탑승객 수 불일치",
-    "無法進行線上Check-in":"온라인 체크인 불가",
-    "APP內預訂/訂餐功能問題":"APP 내 예약/식당 예약 문제",
-    "線上報到顯示未付款":"온라인 체크인 미결제 표시",
-    "報到照片/護照上傳問題":"체크인 사진/여권 업로드 문제",
-    "催一般處理進度":"일반 처리 진행 상황 독촉",
-    "催憑證/確認信":"바우처/확인서 발송 독촉",
-    "催資料修改進度":"정보 수정 진행 상황 독촉",
-    "催問50%退款進度":"50% 환불 진행 상황 독촉",
-    "提供新單設定申請折抵":"새 예약 제공 및 크레딧 신청",
-    "詢問是否符合折抵資格":"크레딧 적용 자격 문의",
-    "已上表/提交退款申請":"환불 신청서 제출 완료",
-    "退款金額有疑問":"환불 금액 문의",
-    "其他50%折抵問題":"기타 50% 크레딧 문제",
-    "修改國籍":"국적 수정",
-    "其他資料修改（姓名/出生日期/護照/Email/性別）":"기타 정보 수정（이름/생년월일/여권/이메일/성별）",
-    "詢問房號編碼":"객실 번호 코드 문의",
-    "要求連通房/相鄰房":"커넥팅룸/인접 객실 요청",
-    "指定房號位置偏好":"객실 위치 선호 지정",
-    "換房/換主題房":"객실 변경/테마 객실 변경",
-    "其他房號問題":"기타 객실 문제",
-    "一般取消/退款申請":"일반 취소/환불 신청",
-    "催退款進度":"환불 진행 상황 독촉",
-    "退款金額疑問/要明細":"환불 금액 문의/명세 요청",
-    "部分退款申請":"부분 환불 신청",
-    "特殊原因取消（家庭/健康）":"특별 사유 취소（가족/건강）",
-    "取消後重新訂購":"취소 후 재예약",
-    "重複預訂/訂錯取消":"중복/잘못된 예약 취소",
-    "詢問如何預訂接駁":"셔틀 예약 방법 문의",
-    "確認是否包含接駁服務":"셔틀 서비스 포함 여부 확인",
-    "接駁時間查詢/更改":"셔틀 시간 조회/변경",
-    "兌換碼問題（過期/無法使用）":"교환 코드 문제（만료/사용 불가）",
-    "其他接駁問題":"기타 셔틀 문제",
-    "新增旅客（詢問可行性/費用）":"탑승객 추가（가능 여부/비용 문의）",
-    "升等艙房":"객실 업그레이드",
-    "減少人數":"탑승객 수 감소",
-    "攜帶酒精上船":"주류 반입",
-    "攜帶食物/飲料上船":"음식/음료 반입",
-    "電器攜帶限制":"전자제품 반입 제한",
-    "船上吸煙政策":"선내 흡연 정책",
-    "船上消費方式":"선내 결제 방법",
-    "特殊膳食/食物過敏申請":"특별 식단/음식 알레르기 신청",
-    "特殊場合安排（生日/蜜月/紀念日）":"특별 행사 준비（생일/신혼여행/기념일）",
-    "帶嬰兒/幼兒同行":"영아/유아 동반",
-    "自行前往港口（捷運/計程車）":"자가 이동（지하철/택시）",
-    "兩/多筆同行單想綁定一起":"여러 예약 연결",
-    "連通房需求":"커넥팅룸 요청",
-    "合作飯店旅客詢問優先登船接駁":"제휴 호텔 숙박객 우선 탑승 셔틀 문의"
-  }
-};
-
-function getCatName(zhName) {
-  if (currentLang === 'zh') return zhName;
-  return (CAT_TRANS[currentLang] && CAT_TRANS[currentLang][zhName]) || zhName;
-}
-function getSubName(zhName) {
-  if (currentLang === 'zh') return zhName;
-  return (SUB_TRANS[currentLang] && SUB_TRANS[currentLang][zhName]) || zhName;
 }
 
 // ─── Category colour / icon maps ──────────────────────────────────────────
@@ -793,7 +561,11 @@ function matchMsg(msg) {
       let score = 0;
       const matched = [];
 
-      sub.keywords.forEach(kw => {
+      const allKws = sub.keywords.slice();
+      const langKws = (KEYWORD_ALIASES[currentLang] || {})[sub.name] || [];
+      langKws.forEach(k => { if (!allKws.includes(k)) allKws.push(k); });
+
+      allKws.forEach(kw => {
         const kwL = kw.toLowerCase();
         let ok = false;
         if (kwL.includes('.*')) {
@@ -831,20 +603,20 @@ function cardHTML(sub, ridx) {
   const c    = catColor(sub.catName);
   const icon = catIcon(sub.catName);
   const ref  = ridx !== undefined ? 'data-ridx="' + ridx + '"' : 'data-subid="' + sub.id + '"';
-  const tx = t();
   const matchedStr  = (sub.matched && sub.matched.length > 0)
-    ? '<span class="matched-kws">' + tx.matched + ': ' + esc(sub.matched.slice(0, 4).join(', ')) + '</span>' : '';
-  const bestBadge   = (ridx === 0) ? '<span class="badge-best">' + tx.bestMatch + '</span>' : '';
+    ? '<span class="matched-kws">命中: ' + esc(sub.matched.slice(0, 4).join(', ')) + '</span>' : '';
+  const bestBadge   = (ridx === 0) ? '<span class="badge-best">最佳匹配</span>' : '';
   const notesHtml   = sub.notes ? '<div class="notes-box">⚠️ ' + esc(sub.notes) + '</div>' : '';
 
   const csReply = getCSReply(sub);
-  const csLabel = tx.csReplyLabel;
+  const langLabels = {zh:'🔵 CS 對客回覆（中文）', en:'🔵 CS Reply (English)', ja:'🔵 CS 返信（日本語）', ko:'🔵 CS 답변（한국어）'};
+  const csLabel = langLabels[currentLang] || '🔵 CS 對客回覆';
 
   const opToCs = sub.op_to_cs ? `
     <div class="card-section">
       <div class="section-row">
-        <span class="section-label" style="color:#10b981">${tx.opToCs}</span>
-        <button class="copy-btn" ${ref} data-field="op_to_cs">${tx.copyBtn}</button>
+        <span class="section-label" style="color:#10b981">🟢 OP 告知給 CS</span>
+        <button class="copy-btn" ${ref} data-field="op_to_cs">📋 複製</button>
       </div>
       <div class="section-body" style="background:rgba(16,185,129,0.08);color:#6ee7b7">${esc(sub.op_to_cs).replace(/\n/g, '<br>')}</div>
     </div>` : '';
@@ -853,14 +625,14 @@ function cardHTML(sub, ridx) {
     <div class="result-card" style="border-left:3px solid ${c}">
       ${bestBadge}
       <div class="card-header">
-        <span class="cat-badge" style="color:${c};background:${c}22;border:1px solid ${c}44">${icon} ${esc(getCatName(sub.catName))}</span>
-        <span class="sub-name">${esc(getSubName(sub.name))}</span>
+        <span class="cat-badge" style="color:${c};background:${c}22;border:1px solid ${c}44">${icon} ${esc(sub.catName)}</span>
+        <span class="sub-name">${esc(sub.name)}</span>
         ${matchedStr}
       </div>
       <div class="card-section">
         <div class="section-row">
-          <span class="section-label" style="color:#a855f7">${tx.opAction}</span>
-          <button class="copy-btn" ${ref} data-field="op_action">${tx.copyBtn}</button>
+          <span class="section-label" style="color:#a855f7">🔴 OP 下一步作業</span>
+          <button class="copy-btn" ${ref} data-field="op_action">📋 複製</button>
         </div>
         <div class="section-body" style="background:rgba(139,92,246,0.08);color:#d8b4fe">${esc(sub.op_action).replace(/\n/g, '<br>')}</div>
       </div>
@@ -868,7 +640,7 @@ function cardHTML(sub, ridx) {
       <div class="card-section">
         <div class="section-row">
           <span class="section-label" style="color:#3b82f6">${csLabel}</span>
-          <button class="copy-btn" ${ref} data-field="cs_reply_current">${tx.copyBtn}</button>
+          <button class="copy-btn" ${ref} data-field="cs_reply_current">📋 複製</button>
         </div>
         <div class="section-body" style="background:rgba(59,130,246,0.08);color:#93c5fd">${esc(csReply).replace(/\n/g, '<br>')}</div>
       </div>
@@ -887,26 +659,23 @@ function switchTab(t) {
 
 // ─── Classify ─────────────────────────────────────────────────────────────
 function detectLang(text) {
-  const hasKorean   = /[가-힯ᄀ-ᇿ㄰-㆏]/.test(text);
-  const hasJapanese = /[぀-ヿ]/.test(text);
-  if (hasKorean)   return 'ko';
-  if (hasJapanese) return 'ja';
-  const latinCount = (text.match(/[a-zA-Z]/g) || []).length;
-  const cjkCount   = (text.match(/[一-鿿]/g) || []).length;
-  if (latinCount > cjkCount && latinCount > 5) return 'en';
+  const ko = (text.match(/[가-힯]/g) || []).length;
+  const ja = (text.match(/[぀-ヿ]/g) || []).length;
+  const zh = (text.match(/[一-鿿]/g) || []).length;
+  if (ko > 2 && ko >= ja && ko >= zh) return 'ko';
+  if (ja > 2 && ja >= ko && ja >= zh) return 'ja';
   return null;
 }
-
 function onInputChange() {
   const v = document.getElementById('msg-input').value;
   document.getElementById('match-btn').disabled = !v.trim();
   if (!v.trim()) {
     document.getElementById('results-area').innerHTML = '';
     document.getElementById('clear-btn').style.display = 'none';
-    return;
+  } else {
+    const detected = detectLang(v);
+    if (detected && detected !== currentLang) setLang(detected);
   }
-  const detected = detectLang(v);
-  if (detected && detected !== currentLang) setLang(detected);
 }
 function clearAll() {
   document.getElementById('msg-input').value = '';
@@ -921,12 +690,12 @@ function doMatch() {
   const area = document.getElementById('results-area');
   document.getElementById('clear-btn').style.display = 'inline-block';
   if (currentResults.length === 0) {
-    area.innerHTML = '<div class="no-results">' + t().noResults + '</div>';
+    area.innerHTML = '<div class="no-results">⚠️ 未匹配到已知情境，可能需要新增至知識庫。</div>';
     return;
   }
   const top = currentResults.slice(0, 3);
   let html = currentResults.length > 1
-    ? '<div class="result-info">' + t().resultInfo(currentResults.length, top.length) + '</div>' : '';
+    ? '<div class="result-info">找到 ' + currentResults.length + ' 個匹配，顯示前 ' + top.length + ' 個</div>' : '';
   top.forEach((r, i) => { html += cardHTML(r, i); });
   area.innerHTML = html;
 }
@@ -945,18 +714,18 @@ function renderBrowse() {
       s.keywords.some(k => k.toLowerCase().includes(q))
     );
     if (filtered.length === 0) {
-      area.innerHTML = '<div class="no-results">' + t().browseNoResults + '</div>';
+      area.innerHTML = '<div class="no-results">找不到相關內容</div>';
       return;
     }
-    let html = '<div class="search-count">' + t().searchCount(filtered.length) + '</div>';
+    let html = '<div class="search-count">搜尋結果：' + filtered.length + ' 個情境</div>';
     filtered.forEach(s => {
       const c = catColor(s.catName);
       const isOpen = expandedSub === s.id;
       html += `<div class="search-result-row" style="border-left:3px solid ${c}" onclick="toggleSearchSub('${s.id}')">
         <div class="sr-inner">
-          <span class="cat-badge" style="color:${c};background:${c}22;border:1px solid ${c}44">${catIcon(s.catName)} ${esc(getCatName(s.catName))}</span>
-          <span class="sub-label">${esc(getSubName(s.name))}</span>
-          <span class="sr-meta">${t().cases(s.cases)} ${isOpen ? '▼' : '▶'}</span>
+          <span class="cat-badge" style="color:${c};background:${c}22;border:1px solid ${c}44">${catIcon(s.catName)} ${esc(s.catName)}</span>
+          <span class="sub-label">${esc(s.name)}</span>
+          <span class="sr-meta">${s.cases}筆 ${isOpen ? '▼' : '▶'}</span>
         </div>
         ${isOpen ? '<div class="sub-detail" onclick="event.stopPropagation()">' + cardHTML(s) + '</div>' : ''}
       </div>`;
@@ -973,8 +742,8 @@ function renderBrowse() {
           const subOpen = expandedSub === sub.id;
           subsHtml += `<div class="sub-row" onclick="event.stopPropagation();toggleSub('${sub.id}')">
             <div class="sub-inner">
-              <span class="sub-label">${esc(getSubName(sub.name))}</span>
-              <span class="sub-meta">${t().cases(sub.cases)} ${subOpen ? '▼' : '▶'}</span>
+              <span class="sub-label">${esc(sub.name)}</span>
+              <span class="sub-meta">${sub.cases}筆 ${subOpen ? '▼' : '▶'}</span>
             </div>
             ${subOpen ? '<div class="sub-detail" onclick="event.stopPropagation()">' + cardHTML(Object.assign({}, sub, {catName: cat.name, catId: cat.id})) + '</div>' : ''}
           </div>`;
@@ -984,9 +753,9 @@ function renderBrowse() {
         <div class="cat-row" style="border-left:3px solid ${c}" onclick="toggleCat('${cat.id}')">
           <div class="cat-inner">
             <span class="cat-icon">${catIcon(cat.name)}</span>
-            <span class="cat-name">${esc(getCatName(cat.name))}</span>
-            <span class="cat-count" style="color:${c}">${t().cases(cat.total_cases)}</span>
-            <span class="cat-meta">${t().scenarios(cat.subcategories.length)} ${isOpen ? '▼' : '▶'}</span>
+            <span class="cat-name">${esc(cat.name)}</span>
+            <span class="cat-count" style="color:${c}">${cat.total_cases}筆</span>
+            <span class="cat-meta">${cat.subcategories.length}個情境 ${isOpen ? '▼' : '▶'}</span>
           </div>
         </div>
         ${isOpen ? '<div class="sub-list">' + subsHtml + '</div>' : ''}
@@ -1021,9 +790,9 @@ document.addEventListener('click', function(e) {
     document.body.appendChild(ta); ta.select(); document.execCommand('copy');
     document.body.removeChild(ta);
   });
-  btn.textContent = t().copiedBtn;
+  btn.textContent = '✅ 已複製';
   btn.classList.add('copied');
-  setTimeout(() => { btn.textContent = t().copyBtn; btn.classList.remove('copied'); }, 1500);
+  setTimeout(() => { btn.textContent = '📋 複製'; btn.classList.remove('copied'); }, 1500);
 });
 
 // ─── Initialise ───────────────────────────────────────────────────────────
@@ -1051,9 +820,9 @@ async function fetchWithRetry(url, attempts) {
 async function init() {
   const loadingText = document.getElementById('loading-text');
   try {
-    loadingText.textContent = t().loadingSheet;
+    loadingText.textContent = '正在從 Google Sheets 載入最新知識庫...';
     const raw = await fetchWithRetry(SHEET_URL, 3);
-    loadingText.textContent = t().parsing;
+    loadingText.textContent = '解析資料中...';
     const rows = parseCSV(raw);
     KB = buildKBFromCSV(rows);
 
@@ -1098,7 +867,8 @@ async function init() {
       });
     });
 
-    document.getElementById('subtitle').textContent = t().subtitle(allSubs.length);
+    document.getElementById('subtitle').textContent =
+      allSubs.length + ' 個情境 · 中英日韓辨識 · 多語言回覆';
 
     const overlay = document.getElementById('loading-overlay');
     overlay.classList.add('hidden');
@@ -1109,10 +879,10 @@ async function init() {
   } catch (err) {
     loadingText.innerHTML = `
       <div class="error-box">
-        ${t().errTitle}<br>
+        ❌ 無法載入知識庫資料<br>
         <small style="color:#94a3b8;font-size:11px">${esc(err.message)}</small><br>
-        <small style="color:#64748b;font-size:11px">${t().errHint}</small><br>
-        <button class="retry-btn" onclick="init()">${t().retryBtn}</button>
+        <small style="color:#64748b;font-size:11px">請確認網路連線正常，或 Google Sheets 已「發布到網路」</small><br>
+        <button class="retry-btn" onclick="init()">🔄 重新載入</button>
       </div>`;
   }
 }
